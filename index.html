@@ -894,12 +894,14 @@ function renderDash(){
       </tr></thead>
       <tbody>${act.length?act.map(p=>{
         const eng=getUser(p.engineerId),ag=getUser(p.agentId);
-        const ao=allOrdered(p);
-        const procStatus=ao===null
-          ?`<span style="color:var(--t4);font-size:16px">—</span>`
-          :ao
-            ?`<span class="bdg bg" style="font-size:29px">✓ הוזמן</span>`
-            :`<span class="bdg br" style="font-size:10px">⚠ לא הוזמן</span>`;
+        const ps=procStatus(p);
+        const procStatusHtml=ps===null
+          ?`<span style="color:var(--t4);font-size:11px">—</span>`
+          :ps==='arrived'
+            ?`<span class="bdg bg" style="font-size:10px">✓ הגיע</span>`
+            :ps==='ordered'
+              ?`<span class="bdg bb" style="font-size:10px">✓ הוזמן</span>`
+              :`<span class="bdg br" style="font-size:10px">⚠ לא הוזמן</span>`;
         const ov2=barSt(p,'planning')==='overdue'||barSt(p,'production')==='overdue';
         return`<tr class="row" style="${ov2?'background:rgba(239,68,68,.04)':''}" onclick="openPD('${pid(p)}')">
           <td style="font-weight:600">${p.client||'—'}</td>
