@@ -1452,15 +1452,21 @@ function renderPD(){
     </div>
 
     <div class="sec">תכנון הנדסי ${cf?'<span class="cfbdg">⚠ חפיפה</span>':''}</div>
-    <div class="g3">
-      <div class="fld">
-        <label class="fl" style="color:${p.actualPlanStart?'#4ade80':''}">תחילה בפועל ${p.actualPlanStart?'✓':''}</label>
-        <input type="date" class="fi" value="${toISO(p.actualPlanStart||p.planStart)}" style="border-color:${p.actualPlanStart?'rgba(34,197,94,.4)':''}" onchange="doUpDate('${pid(p)}','actualPlanStart',this.value)">
-        ${p.actualPlanStart?`<div style="font-size:29px;color:#4ade80;margin-top:3px">✓ עודכן ידנית</div>`:''}
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fld"><label class="fl">תחילה מתוכננת</label>
+        <input type="date" class="fi" value="${toISO(p.planStart)}" onchange="doUpDate('${pid(p)}','planStart',this.value)">
       </div>
-      <div class="fld"><label class="fl">סיום מתוכנן</label><input type="date" class="fi" value="${toISO(p.planEnd)}" onchange="doUpDate('${pid(p)}','planEnd',this.value)"></div>
-      <div class="fld">
-        <label class="fl">סיום בפועל</label>
+      <div class="fld"><label class="fl" style="color:${p.actualPlanStart?'#16a34a':''}">תחילה בפועל ${p.actualPlanStart?'✓':''}</label>
+        <input type="date" class="fi" value="${toISO(p.actualPlanStart)}"
+          style="border-color:${p.actualPlanStart?'rgba(22,163,74,.5)':''}"
+          onchange="doUpDate('${pid(p)}','actualPlanStart',this.value)">
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="fl">סיום מתוכנן</label>
+        <input type="date" class="fi" value="${toISO(p.planEnd)}" onchange="doUpDate('${pid(p)}','planEnd',this.value)">
+      </div>
+      <div class="fld"><label class="fl">סיום בפועל</label>
         <input type="date" class="fi" value="${toISO(p.actualPlanEnd)}" onchange="doUpDate('${pid(p)}','actualPlanEnd',this.value)">
         ${planDiff!==null?`<div style="margin-top:4px">${diffChip(planDiff)}</div>`:''}
       </div>
@@ -1860,6 +1866,7 @@ function render(){
   else if(S.view==='gantt')body=renderGantt();
   else if(S.view==='milestones')body=renderMilestones();
   else if(S.view==='approval')body=renderApproval();
+  else if(S.view==='archive')body=renderArchive();
   else if(S.view==='admin')body=renderAdmin();
   if(S.modal==='pd')modal=renderPD();
   else if(S.modal==='np')modal=renderNP();
@@ -2267,11 +2274,26 @@ function doUpPD(pid2,iid,k,v){
 function doMarkArr(pid2,iid){const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;upProj(pid2,{procurement:p.procurement.map(i=>i.id===iid?{...i,arrived:true,arrivedDate:TODAY.toISOString()}:i)});}
 function doCncPC(pid2,iid){const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;upProj(pid2,{procurement:p.procurement.map(i=>i.id===iid?{...i,cancelled:true}:i)});}
 async function doAddNote(pid2){
-  const t=(S.nn||'').trim();if(!t)return;
+  const inp=document.getElementById('note_inp');
+  const t=(inp?.value||S.nn||'').trim();
+  if(!t)return;
   const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;
   upProj(pid2,{notes:[...(p.notes||[]),{user:cu()?.name||'',text:t,date:TODAY.toISOString()}]});
-  S.nn='';render();
+  if(inp)inp.value='';
+  S.nn='';
   await logAction('add_note',p.client||'');
+  // Send email to selected recipients
+  const recipients=(S.md._noteRecipients||[]);
+  if(recipients.length>0){
+    const targets=S.users.filter(u=>recipients.includes(u.id)&&u.email);
+    for(const u of targets){
+      await sendMail(u.name,u.email,'📝 הערה חדשה',
+        `הערה מאת ${cu()?.name||''}:\n\n${t}\n\nפרויקט: ${p.client||''} (${p.orderNum||''})`,
+        p.client||'');
+    }
+    S.md._noteRecipients=[];
+  }
+  render();
 }
 
 
@@ -2611,8 +2633,317 @@ function clearProjFilter(){S.projFilter={status:'all',search:'',agent:'all'};ren
 
 function procGanttBadge(dst,gt){if(gt==='procurement'){const lbls={done:'✓ הגיע',active:'✓ הוזמן',overdue:'⚠ לא הוזמן',future:'—'};const cls={done:'bg',active:'bb',overdue:'br',future:'by'};if(dst==='future')return'<span style="color:var(--t4)">—</span>';return bdg(cls[dst],lbls[dst]);}return bdg(SBDG[dst],SHEB[dst]);}
 
+
+function toggleNoteRecipient(uid){
+  if(!S.md._noteRecipients)S.md._noteRecipients=[];
+  const idx=S.md._noteRecipients.indexOf(uid);
+  if(idx>=0)S.md._noteRecipients.splice(idx,1);
+  else S.md._noteRecipients.push(uid);
+  render();
+}
+function toggleAllNoteRecipients(){
+  const active=S.users.filter(u=>u.active!==false&&u.email);
+  if((S.md._noteRecipients||[]).length===active.length){
+    S.md._noteRecipients=[];
+  } else {
+    S.md._noteRecipients=active.map(u=>u.id);
+  }
+  render();
+}
+
+
+// ── ARCHIVE ───────────────────────────────────────────────────
+function renderArchive(){
+  const done=S.projects.filter(p=>p.status==='הושלם'||p.cancelled);
+  const sel=S.md._archiveSel||null;
+  if(sel){
+    const p=done.find(x=>pid(x)===sel);
+    if(p)return renderArchiveDetail(p);
+  }
+  // KPIs
+  const completed=done.filter(p=>p.status==='הושלם');
+  const avgPlanDiff=completed.filter(p=>p.planStart&&p.planEnd&&p.actualPlanEnd)
+    .map(p=>diffD(p.planEnd,p.actualPlanEnd)).reduce((a,b)=>a+b,0)/Math.max(1,completed.filter(p=>p.actualPlanEnd).length);
+  const avgProdDiff=completed.filter(p=>p.prodStart&&p.prodEnd&&p.actualProdEnd)
+    .map(p=>diffD(p.prodEnd,p.actualProdEnd)).reduce((a,b)=>a+b,0)/Math.max(1,completed.filter(p=>p.actualProdEnd).length);
+  const onTime=completed.filter(p=>p.actualPlanEnd&&toD(p.actualPlanEnd)<=toD(p.planEnd)).length;
+
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <div><div class="page-title">ארכיון פרויקטים</div><div class="page-sub">${done.length} פרויקטים מוגמרים</div></div>
+    </div>
+    <div class="kpi-grid" style="margin-bottom:18px">
+      <div class="kpi green"><div class="kpi-v" style="color:#16a34a">${completed.length}</div><div class="kpi-l">הושלמו</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi blue"><div class="kpi-v" style="color:#2563eb">${onTime}</div><div class="kpi-l">בזמן (תכנון)</div><div class="kpi-icon">⏱</div></div>
+      <div class="kpi ${avgPlanDiff>0?'red':'green'}"><div class="kpi-v" style="color:${avgPlanDiff>0?'#dc2626':'#16a34a'}">${Math.abs(Math.round(avgPlanDiff))}</div><div class="kpi-l">ממוצע חריגת תכנון (ימים)</div><div class="kpi-icon">📐</div></div>
+      <div class="kpi ${avgProdDiff>0?'red':'green'}"><div class="kpi-v" style="color:${avgProdDiff>0?'#dc2626':'#16a34a'}">${Math.abs(Math.round(avgProdDiff))}</div><div class="kpi-l">ממוצע חריגת ייצור (ימים)</div><div class="kpi-icon">🏭</div></div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+    <table style="min-width:900px"><thead><tr>
+      <th>לקוח</th><th>הזמנה</th><th>סוכן</th><th>התקנה</th>
+      <th>חריגת תכנון</th><th>חריגת ייצור</th><th>בקרה</th><th>ציון</th>
+    </tr></thead>
+    <tbody>${done.length?done.map(p=>{
+      const ag=getUser(p.agentId);
+      const planDiff2=p.planEnd&&p.actualPlanEnd?diffD(p.planEnd,p.actualPlanEnd):null;
+      const prodDiff2=p.prodEnd&&p.actualProdEnd?diffD(p.prodEnd,p.actualProdEnd):null;
+      const followupDate=p.followupDate||( p.actualInstallDate?new Date(new Date(p.actualInstallDate).getTime()+60*24*3600*1000).toISOString():null);
+      const followupDone=p.followupDone||false;
+      const followupOverdue=followupDate&&!followupDone&&toD(followupDate)<TODAY;
+      // Score 0-100
+      let score=100;
+      if(planDiff2&&planDiff2>0)score-=Math.min(30,planDiff2*2);
+      if(prodDiff2&&prodDiff2>0)score-=Math.min(30,prodDiff2*2);
+      const procIssues=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived).length;
+      score-=procIssues*5;
+      score=Math.max(0,Math.round(score));
+      const scoreCol=score>=80?'#16a34a':score>=60?'#d97706':'#dc2626';
+      return`<tr class="row" onclick="S.md._archiveSel='${pid(p)}';render()">
+        <td style="font-weight:600">${p.client||'—'}</td>
+        <td class="mono" style="color:var(--t3)">${p.orderNum||'—'}</td>
+        <td style="font-size:12px">${ag?.name||'—'}</td>
+        <td class="mono">${fmtD(p.actualInstallDate||p.installDate)}</td>
+        <td>${planDiff2!==null?`<span class="diff-chip ${planDiff2>0?'diff-pos':planDiff2<0?'diff-neg':'diff-zero'}">${planDiff2>0?'+'+planDiff2:planDiff2} י'</span>`:'<span style="color:var(--t4)">—</span>'}</td>
+        <td>${prodDiff2!==null?`<span class="diff-chip ${prodDiff2>0?'diff-pos':prodDiff2<0?'diff-neg':'diff-zero'}">${prodDiff2>0?'+'+prodDiff2:prodDiff2} י'</span>`:'<span style="color:var(--t4)">—</span>'}</td>
+        <td>${followupDone
+          ?`<span class="bdg bg" style="font-size:10px">✓ בוצעה</span>`
+          :followupOverdue
+            ?`<span class="bdg br" style="font-size:10px">⚠ ${fmtD(followupDate)}</span>`
+            :followupDate
+              ?`<span class="bdg bam" style="font-size:10px">📅 ${fmtD(followupDate)}</span>`
+              :'<span style="color:var(--t4);font-size:11px">—</span>'
+        }</td>
+        <td><span style="font-weight:700;color:${scoreCol};font-family:'IBM Plex Mono',monospace">${score}</span></td>
+      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:28px;opacity:.4">📦</div><div style="color:var(--t3)">אין פרויקטים מוגמרים</div></td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderArchiveDetail(p){
+  const ag=getUser(p.agentId),eng=getUser(p.engineerId),pm2=getUser(p.prodManagerId);
+  const planDiff2=p.planEnd&&p.actualPlanEnd?diffD(p.planEnd,p.actualPlanEnd):null;
+  const prodDiff2=p.prodEnd&&p.actualProdEnd?diffD(p.prodEnd,p.actualProdEnd):null;
+  const planDays=p.planStart&&p.planEnd?diffD(p.planStart,p.planEnd):null;
+  const planActDays=p.planStart&&p.actualPlanEnd?diffD(p.planStart,p.actualPlanEnd):null;
+  const prodDays=p.prodStart&&p.prodEnd?diffD(p.prodStart,p.prodEnd):null;
+  const prodActDays=p.prodStart&&p.actualProdEnd?diffD(p.prodStart,p.actualProdEnd):null;
+  const followupDate=p.followupDate||(p.actualInstallDate?new Date(new Date(p.actualInstallDate).getTime()+60*24*3600*1000).toISOString():null);
+  const followupDone=p.followupDone||false;
+  const followupConfirm=S.md._followupConfirm||false;
+  const tasks=p.archiveTasks||[];
+
+  // Mini gantt bars
+  const allDates=[p.planStart,p.planEnd,p.prodStart,p.prodEnd,p.actualInstallDate||p.installDate].filter(Boolean);
+  const minD=toD(allDates.reduce((a,b)=>a<b?a:b));
+  const maxD=toD(allDates.reduce((a,b)=>a>b?a:b));
+  const totalDays2=maxD&&minD?Math.max(1,diffD(minD.toISOString(),maxD.toISOString())+7):1;
+  const barPct=(d,from)=>Math.max(0,Math.min(100,diffD(from.toISOString(),d)*100/totalDays2));
+  const barW=(d1,d2)=>Math.max(1,Math.min(100,diffD(d1,d2)*100/totalDays2));
+
+  const ganttRow=(label,start,end,color,actualEnd)=>{
+    if(!start)return'';
+    const l2=barPct(start,minD),w=barW(start,end||start);
+    const al=actualEnd?barPct(actualEnd,minD):null;
+    const aw=actualEnd&&start?barW(start,actualEnd):null;
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:80px;font-size:11px;color:var(--t3);text-align:left;flex-shrink:0">${label}</div>
+      <div style="flex:1;height:20px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible">
+        <div style="position:absolute;left:${l2}%;width:${w}%;height:100%;background:${color}44;border:1px solid ${color};border-radius:3px;min-width:3px"></div>
+        ${al!==null?`<div style="position:absolute;left:${al}%;width:${aw}%;height:100%;background:${color};border-radius:3px;opacity:.7;min-width:3px"></div>`:''}
+      </div>
+    </div>`;
+  };
+
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <button class="btn sec" onclick="S.md._archiveSel=null;render()">← חזור לארכיון</button>
+    </div>
+
+    <!-- Header card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:700">${p.client}</div>
+          <div style="color:var(--t3);font-size:13px">${p.projectName||''} · ${p.orderNum||''} · ${p.projectType||''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${sbdg(p)}
+          ${p.cancelled?bdg('br','בוטל'):''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        ${[['סוכן',ag?.name||'—'],['מתכנן',eng?.name||'—'],['מנהל ייצור',pm2?.name||'—'],['התקנה',fmtD(p.actualInstallDate||p.installDate)]].map(([l,v])=>`
+          <div style="background:var(--bg3);border-radius:var(--r8);padding:10px;border:1px solid var(--b)">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:3px">${l}</div>
+            <div style="font-weight:600;font-size:13px">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Performance card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:14px">📊 ביצועים מול תכנון</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">תכנון הנדסי</div>
+          <table style="width:100%;font-size:12px"><tbody>
+            <tr><td style="color:var(--t3);padding:3px 0">מתוכנן</td><td style="font-weight:600;text-align:left">${planDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">בפועל</td><td style="font-weight:600;text-align:left">${planActDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">חריגה</td><td style="text-align:left">${planDiff2!==null?`<span class="diff-chip ${planDiff2>0?'diff-pos':planDiff2<0?'diff-neg':'diff-zero'}">${planDiff2>0?'+'+planDiff2:planDiff2} ימים</span>`:'—'}</td></tr>
+          </tbody></table>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">ייצור</div>
+          <table style="width:100%;font-size:12px"><tbody>
+            <tr><td style="color:var(--t3);padding:3px 0">מתוכנן</td><td style="font-weight:600;text-align:left">${prodDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">בפועל</td><td style="font-weight:600;text-align:left">${prodActDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">חריגה</td><td style="text-align:left">${prodDiff2!==null?`<span class="diff-chip ${prodDiff2>0?'diff-pos':prodDiff2<0?'diff-neg':'diff-zero'}">${prodDiff2>0?'+'+prodDiff2:prodDiff2} ימים</span>`:'—'}</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <!-- Mini Gantt -->
+      <div style="font-size:11px;color:var(--t3);margin-bottom:8px;font-weight:600">ציר זמן (כחול=מתוכנן, מלא=בפועל)</div>
+      ${ganttRow('תכנון',p.planStart,p.planEnd,'#2563eb',p.actualPlanEnd)}
+      ${ganttRow('ייצור',p.prodStart,p.prodEnd,'#d97706',p.actualProdEnd)}
+      ${ganttRow('התקנה',p.installDate,p.installDate,'#16a34a',p.actualInstallDate)}
+    </div>
+
+    <!-- Procurement card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">📦 רכש</div>
+      ${(p.procurement||[]).length===0?`<div style="color:var(--t3);font-size:12px">אין אביזרי רכש</div>`:''}
+      ${(p.procurement||[]).map(item=>{
+        const expDt=toD(item.expected),arrDt=toD(item.arrivedDate);
+        const delay=expDt&&arrDt?diffD(item.expected,item.arrivedDate):null;
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:var(--r6);margin-bottom:6px;border:1px solid var(--b)">
+          <div>
+            <span style="font-weight:600;font-size:12px">${item.name}</span>
+            ${item.ordered?`<span style="font-size:11px;color:var(--t3);margin-right:8px">הוזמן: ${fmtD(item.ordered)}</span>`:''}
+            ${item.expected?`<span style="font-size:11px;color:var(--t3)">אספקה: ${fmtD(item.expected)}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${item.arrived?`<span class="bdg bg" style="font-size:10px">✓ הגיע ${fmtD(item.arrivedDate)}</span>`:`<span class="bdg br" style="font-size:10px">לא הגיע</span>`}
+            ${delay!==null?`<span class="diff-chip ${delay>0?'diff-pos':delay<0?'diff-neg':'diff-zero'}" style="font-size:10px">${delay>0?'+'+delay:delay} י'</span>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Follow-up card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">🔍 בקרה לאחר התקנה</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:3px">תאריך בקרה נדרש (חודשיים מהתקנה)</div>
+          <div style="font-weight:600;font-size:14px;color:${!followupDone&&followupDate&&toD(followupDate)<TODAY?'#dc2626':'var(--t)'}">${fmtD(followupDate)||'—'}</div>
+        </div>
+        <div>
+          ${followupDone
+            ?`<span class="bdg bg">✓ בוצעה ${fmtD(p.followupDoneDate)}</span>`
+            :!followupConfirm
+              ?`<button class="btn pri sm" onclick="S.md._followupConfirm=true;render()">✓ סמן בוצעה</button>`
+              :`<div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:12px">לאשר?</span>
+                  <button class="btn xs sec" onclick="S.md._followupConfirm=false;render()">לא</button>
+                  <button class="btn xs pri" onclick="doMarkFollowup('${pid(p)}')">✓ כן</button>
+                </div>`}
+        </div>
+        <button class="btn sm sec" onclick="doSendFollowupReminder('${pid(p)}')" style="margin-right:auto">📧 שלח תזכורת</button>
+      </div>
+      <div class="fld">
+        <label class="fl">תאריך בקרה מותאם אישית</label>
+        <input type="date" class="fi" style="max-width:200px" value="${toISO(p.followupDate||followupDate)}"
+          onchange="doUpDate('${pid(p)}','followupDate',this.value)">
+      </div>
+    </div>
+
+    <!-- Notes card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">📝 הערות ולקחים</div>
+      ${(p.notes||[]).slice().reverse().map(n=>`<div class="note"><div class="note-meta"><span class="note-user">${n.user}</span><span class="note-date">${fmtD(n.date)}</span></div><div class="note-text">${n.text}</div></div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="fi" id="arch_note" placeholder="הוסף לקח / הערה..." style="flex:1">
+        <button class="btn pri" onclick="doArchiveNote('${pid(p)}')">הוסף</button>
+      </div>
+    </div>
+
+    <!-- Tasks card -->
+    <div class="card" style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-hdr-title">✅ משימות המשך</div>
+        <button class="btn sm pri" onclick="doAddArchiveTask('${pid(p)}')">+ משימה</button>
+      </div>
+      ${tasks.length===0?`<div style="color:var(--t3);font-size:12px;padding:8px 0">אין משימות — לחץ "+ משימה" להוספה</div>`:''}
+      ${tasks.map((task,ti)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:var(--r6);margin-bottom:6px;border:1px solid var(--b);flex-wrap:wrap">
+        <input type="checkbox" ${task.done?'checked':''} onchange="doToggleArchiveTask('${pid(p)}','${task.id}')" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:12px;font-weight:500;${task.done?'text-decoration:line-through;color:var(--t3)':''}">${task.text}</div>
+          ${task.due?`<div style="font-size:10px;color:${!task.done&&toD(task.due)<TODAY?'#dc2626':'var(--t3)'}">${fmtD(task.due)}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select class="fi" style="font-size:11px;padding:3px 6px;width:auto" onchange="doUpArchiveTask('${pid(p)}','${task.id}','assignee',this.value)">
+            <option value="">אחראי...</option>
+            ${S.users.map(u=>`<option value="${u.id}" ${task.assignee===u.id?'selected':''}>${u.name}</option>`).join('')}
+          </select>
+          <span class="bdg ${task.done?'bg':toD(task.due)&&toD(task.due)<TODAY?'br':'bam'}" style="font-size:9px">${task.done?'הושלם':toD(task.due)&&toD(task.due)<TODAY?'באיחור':'פתוח'}</span>
+          <button class="btn xs" style="color:#dc2626" onclick="doDelArchiveTask('${pid(p)}','${task.id}')">✕</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// Archive action functions
+async function doMarkFollowup(id){
+  upProj(id,{followupDone:true,followupDoneDate:new Date().toISOString()});
+  S.md._followupConfirm=false;
+  await logAction('add_note','בקרה לאחר התקנה בוצעה');
+  render();
+}
+async function doSendFollowupReminder(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const ag=getUser(p.agentId);
+  if(ag?.email){
+    await sendMail(ag.name,ag.email,'📅 תזכורת בקרה לאחר התקנה',
+      `שלום ${ag.name},\n\nנדרשת בקרת ביצועי מערכת אצל הלקוח ${p.client||''} (${p.orderNum||''}).\nתאריך נדרש: ${fmtD(p.followupDate||'')}\n\nאנא תאם ביקור בקרה עם הלקוח.`,
+      p.client||'');
+  }
+  alert('תזכורת נשלחה ל-'+ag?.name);
+}
+async function doArchiveNote(id){
+  const inp=document.getElementById('arch_note');
+  const txt=inp?.value?.trim();if(!txt)return;
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const note={user:cu()?.name||'',text:txt,date:new Date().toISOString()};
+  upProj(id,{notes:[...(p.notes||[]),note]});
+  if(inp)inp.value='';
+  await logAction('add_note',`${p.client||''} — לקח: ${txt.slice(0,40)}`);
+  render();
+}
+function doAddArchiveTask(id){
+  const text=prompt('תיאור המשימה:');if(!text)return;
+  const due=prompt('תאריך יעד (YYYY-MM-DD):');
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=[...(p.archiveTasks||[]),{id:'t'+Date.now(),text,due:due||'',assignee:'',done:false}];
+  upProj(id,{archiveTasks:tasks});render();
+}
+function doToggleArchiveTask(id,tid){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=(p.archiveTasks||[]).map(t=>t.id===tid?{...t,done:!t.done}:t);
+  upProj(id,{archiveTasks:tasks});render();
+}
+function doUpArchiveTask(id,tid,key,val){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=(p.archiveTasks||[]).map(t=>t.id===tid?{...t,[key]:val}:t);
+  upProj(id,{archiveTasks:tasks});
+}
+function doDelArchiveTask(id,tid){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  upProj(id,{archiveTasks:(p.archiveTasks||[]).filter(t=>t.id!==tid)});render();
+}
+
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,buildProcSummary,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+const W={V,doLogin,doLogout,buildProcSummary,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
   setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
 Object.entries(W).forEach(([k,v])=>window[k]=v);
 // Expose S and render for inline handlers
