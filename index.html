@@ -1704,7 +1704,13 @@ function renderUM(){
           <div class="fld"><label class="fl">נייד</label><input class="fi" id="um_phone" autocomplete="off" value="${u.phone||''}" placeholder="050-0000000"></div>
         </div>
         <div class="fld"><label class="fl">${isE?'סיסמא חדשה (השאר ריק לאי-שינוי)':'סיסמא ראשונית *'}</label>
-          <input class="fi" id="um_pass" type="password" autocomplete="new-password" placeholder="${isE?'••••••••':'לפחות 6 תווים'}"></div>
+          <div style="position:relative">
+            <input class="fi" id="um_pass" type="text" autocomplete="off"
+              placeholder="${isE?'הכנס סיסמא חדשה':'לפחות 6 תווים'}"
+              style="font-family:'IBM Plex Mono',monospace;letter-spacing:.5px">
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px">🔒 גלוי למנהל בלבד</div>
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
           <label class="tog"><input type="checkbox" id="um_agent" ${u.isAgent?'checked':''}><span class="tog-sl"></span></label>
           <span style="font-size:28px">סוכן אחראי</span>
