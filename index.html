@@ -911,7 +911,7 @@ function renderDash(){
           <td class="mono" style="${barSt(p,'planning')==='overdue'?'color:#f87171':'color:var(--t)'}">${fmtD(p.planEnd)}</td>
           <td class="mono" style="${barSt(p,'production')==='overdue'?'color:#f87171':'color:var(--t)'}">${fmtD(p.prodEnd)}</td>
           <td class="mono" style="color:#10b981;font-weight:600">${fmtD(p.installDate)}</td>
-          <td>${procStatusHtml}</td>
+          <td>${procStatus}</td>
         </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📋</div><div style="color:var(--t3);font-size:29px">אין פרויקטים פעילים</div><div style="color:var(--t4);font-size:16px;margin-top:4px">לחץ "פרויקט חדש" כדי להתחיל</div></td></tr>`}
       </tbody></table>
       </div>
