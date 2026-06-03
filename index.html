@@ -1,0 +1,2979 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ProjectFlow — מערכת ניהול פרויקטים</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#f8fafc;--bg4:#eef2f7;
+  --b:#cbd5e1;--b2:#94a3b8;--b3:#e2e8f0;
+  --t:#0f172a;--t2:#334155;--t3:#64748b;--t4:#64748b;
+  --blue:#2563eb;--blue2:#1d4ed8;--blue3:#1e40af;
+  --green:#16a34a;--green2:#15803d;
+  --red:#dc2626;--red2:#b91c1c;
+  --amber:#d97706;--amber2:#b45309;
+  --purple:#7c3aed;--purple2:#6d28d9;
+  --teal:#0d9488;
+  --r4:4px;--r6:6px;--r8:8px;--r10:10px;--r12:12px;--r16:16px;
+  --shadow:0 4px 24px rgba(0,0,0,.1);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.08);
+}
+body{font-family:'IBM Plex Sans Hebrew',sans-serif;font-size:13px;background:var(--bg);color:var(--t);direction:rtl;min-height:100vh;line-height:1.5;width:100%;overflow-x:hidden}
+button,input,select,textarea{font-family:inherit;font-size:12px;line-height:1.4}
+textarea{resize:vertical}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:var(--b);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--b3)}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;min-height:100vh;width:100%}
+.main{padding:20px;flex:1;width:100%;box-sizing:border-box}
+.main-full{padding:16px 20px;flex:1;width:100%;min-width:0;box-sizing:border-box}
+
+/* ── TOPBAR ── */
+.topbar{
+  width:100%;background:rgba(255,255,255,.95);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--b);
+  padding:0 16px;height:54px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 2px 20px rgba(0,0,0,.3);
+}
+.logo{font-weight:700;font-size:14px;color:#f8fafc;display:flex;align-items:center;gap:8px;white-space:nowrap;letter-spacing:-.3px}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--blue),var(--purple2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.nav{display:flex;gap:1px;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:6px 12px;border:none;border-radius:var(--r6);
+  background:transparent;color:var(--t3);cursor:pointer;
+  white-space:nowrap;transition:all .15s;font-weight:400;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.btn:hover{background:rgba(255,255,255,.06);color:var(--t2)}
+.btn.act{background:rgba(59,130,246,.15);color:var(--blue);font-weight:500;border:1px solid rgba(59,130,246,.25)}
+.btn.pri{background:var(--blue);color:#fff;font-weight:500}
+.btn.pri:hover{background:var(--blue2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(59,130,246,.35)}
+.btn.pri:active{transform:translateY(0)}
+.btn.sec{background:rgba(255,255,255,.06);color:var(--t2);border:1px solid var(--b)}
+.btn.sec:hover{background:rgba(255,255,255,.1)}
+.btn.dan{background:var(--red2);color:#fff;font-weight:500}
+.btn.dan:hover{background:#b91c1c}
+.btn.suc{background:var(--green2);color:#fff;font-weight:500}
+.btn.suc:hover{background:#15803d}
+.btn.sm{padding:4px 10px;font-size:11px}
+.btn.xs{padding:2px 7px;font-size:11px}
+.btn.icon{padding:5px;width:32px;height:32px;justify-content:center}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* ── AVATAR ── */
+.av{border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;vertical-align:middle;letter-spacing:-.5px}
+
+/* ── PAGE HEADER ── */
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.page-title{font-size:17px;font-weight:700;color:#f8fafc;letter-spacing:-.4px}
+.page-sub{font-size:28px;color:var(--t3);margin-top:2px}
+
+/* ── CARD ── */
+.card{
+  background:var(--bg2);
+  border:1px solid var(--b);
+  border-radius:var(--r12);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.card-hdr{
+  padding:13px 16px;
+  border-bottom:1px solid var(--b3);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.02);
+}
+.card-hdr-title{font-weight:600;font-size:11px;color:#e2e8f0}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{
+  background:var(--bg4);
+  border:1px solid var(--b);
+  border-radius:var(--r10);
+  padding:16px 18px;
+  position:relative;
+  overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+  cursor:default;
+}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.kpi::before{content:'';position:absolute;top:0;right:0;width:3px;height:100%;border-radius:0 var(--r10) var(--r10) 0}
+.kpi.blue::before{background:linear-gradient(to bottom,var(--blue),var(--blue3))}
+.kpi.amber::before{background:linear-gradient(to bottom,var(--amber),var(--amber2))}
+.kpi.red::before{background:linear-gradient(to bottom,var(--red),var(--red2))}
+.kpi.green::before{background:linear-gradient(to bottom,var(--green),var(--green2))}
+.kpi-v{font-size:26px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1}
+.kpi-l{font-size:11px;color:var(--t3);margin-top:5px;font-weight:500}
+.kpi-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:30px;opacity:.15}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:right;padding:10px 14px;
+  font-size:11px;font-weight:600;color:var(--t3);
+  border-bottom:1px solid var(--b3);
+  background:rgba(255,255,255,.02);
+  white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;
+}
+td{padding:11px 14px;border-bottom:1px solid rgba(30,58,95,.4);font-size:28px;vertical-align:middle}
+tr.row{cursor:pointer;transition:background .1s}
+tr.row:hover td{background:rgba(37,99,235,.06)}
+tr.row:last-child td{border-bottom:none}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ── BADGES ── */
+.bdg{
+  display:inline-flex;align-items:center;
+  padding:3px 8px;border-radius:20px;
+  font-size:11px;font-weight:600;
+  border:1px solid;white-space:nowrap;
+  letter-spacing:.2px;
+}
+.bg{background:#dcfce7;color:#166534;border-color:#86efac}
+.bb{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.br{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+.by{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
+.bam{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.bpu{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd}
+.bt{background:#ccfbf1;color:#115e59;border-color:#5eead4}
+
+/* ── MODAL ── */
+.mbg{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(4px);
+  z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+  animation:fadein .15s ease;
+}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--bg2);
+  border:1px solid var(--b2);
+  border-radius:var(--r16);
+  width:100%;max-width:660px;
+  max-height:90vh;
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+  box-shadow:0 25px 60px rgba(0,0,0,.5);
+  animation:slidein .2s ease;
+}
+@keyframes slidein{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal.wide{max-width:860px}
+.modal.sm{max-width:460px}
+.mhd{
+  padding:16px 20px 12px;
+  border-bottom:1px solid var(--b3);
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-shrink:0;
+  background:rgba(255,255,255,.02);
+}
+.mttl{font-size:14px;font-weight:700;color:#f8fafc;letter-spacing:-.3px}
+.msub{font-size:11px;color:var(--t3);margin-top:2px}
+.mbdy{padding:20px;flex:1;overflow-y:auto}
+.mft{
+  padding:12px 20px;
+  border-top:1px solid var(--b3);
+  display:flex;justify-content:flex-end;gap:8px;
+  flex-shrink:0;
+  background:rgba(255,255,255,.02);
+}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;
+  border-bottom:1px solid var(--b3);
+  padding:0 20px;
+  flex-shrink:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+  gap:2px;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  padding:10px 14px;border:none;background:transparent;
+  color:var(--t3);font-size:28px;font-weight:500;
+  border-bottom:2px solid transparent;cursor:pointer;
+  margin-bottom:-1px;white-space:nowrap;transition:all .15s;
+}
+.tab:hover{color:var(--t2)}
+.tab.act{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* ── FORM ── */
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px}
+.fi{
+  background:var(--bg3);
+  border:1px solid var(--b);
+  border-radius:var(--r8);
+  padding:8px 12px;color:var(--t);
+  width:100%;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.fi:hover:not(:focus){border-color:var(--b2)}
+.fi.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.15)}
+select.fi{cursor:pointer}
+.emsg{font-size:11px;color:#f87171;margin-top:2px;display:flex;align-items:center;gap:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── SEC HEADER ── */
+.sec{
+  font-size:11px;font-weight:700;color:var(--t3);
+  text-transform:uppercase;letter-spacing:.8px;
+  margin:18px 0 10px;padding-bottom:7px;
+  border-bottom:1px solid var(--b3);
+  display:flex;align-items:center;gap:8px;
+}
+
+/* ── ALERTS ── */
+.alert{
+  padding:10px 14px;border-radius:var(--r8);
+  font-size:28px;margin-bottom:12px;
+  border:1px solid;display:flex;align-items:flex-start;gap:8px;
+  line-height:1.5;
+}
+.ai{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+.aw{background:#fffbeb;border-color:#fde68a;color:#92400e}
+.ae{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.aok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+
+/* ── TOGGLE ── */
+.tog{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;border-radius:20px;background:var(--b2);cursor:pointer;transition:background .2s}
+.tog input:checked+.tog-sl{background:var(--blue)}
+.tog-sl:before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;right:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog input:checked+.tog-sl:before{transform:translateX(-16px)}
+
+/* ── PIN ── */
+.pin{
+  width:48px;height:52px;text-align:center;
+  font-size:28px;font-weight:700;
+  border:1.5px solid var(--b);border-radius:var(--r8);
+  background:var(--bg3);color:var(--t);outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+.pin:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+
+/* ── GANTT ── */
+.ghdr{display:flex;height:38px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--b3)}
+.glc{width:200px;flex-shrink:0;padding:0 12px;display:flex;align-items:center;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;border-left:1px solid var(--b3)}
+.gtc{flex:1;position:relative;overflow:hidden;min-width:0}
+.gdc{width:140px;flex-shrink:0;padding:0 10px;display:flex;align-items:center;font-size:11px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.grow{display:flex;align-items:center;height:52px;border-bottom:1px solid rgba(30,58,95,.3);transition:background .1s}
+.grow:hover{background:rgba(59,130,246,.04)}
+.grow:last-child{border-bottom:none}
+.grl{width:200px;flex-shrink:0;padding:0 12px;border-left:1px solid var(--b3);display:flex;flex-direction:column;justify-content:center;gap:2px}
+.grt{flex:1;height:100%;position:relative;overflow:hidden;min-width:0}
+.grd{width:140px;flex-shrink:0;padding:0 10px;display:flex;flex-direction:column;gap:3px;justify-content:center}
+.gbar{
+  position:absolute;height:24px;top:50%;transform:translateY(-50%);
+  border-radius:var(--r4);cursor:pointer;
+  display:flex;align-items:center;overflow:hidden;z-index:3;
+  transition:filter .1s,box-shadow .1s;
+}
+.gbar:hover{filter:brightness(1.15);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.gbar span{font-size:11px;color:rgba(255,255,255,.9);padding:0 8px;white-space:nowrap;font-weight:600;overflow:hidden}
+.tline{position:absolute;top:0;bottom:0;width:2px;background:#d97706;z-index:6;pointer-events:none;box-shadow:0 0 6px #d9770644}
+.tick{position:absolute;top:0;bottom:0;border-left:1px solid rgba(30,58,95,.5);display:flex;align-items:center;padding-right:5px;overflow:hidden}
+.tlbl{font-size:11px;font-weight:600;color:var(--t3);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.diam{width:12px;height:12px;border-radius:2px;transform:rotate(45deg) translateX(-50%);position:absolute;top:50%;margin-top:-6px;z-index:4;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.pdot{width:18px;height:18px;border-radius:50%;position:absolute;top:50%;transform:translate(-50%,-50%);z-index:4;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;font-weight:700;border:2px solid;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.plbl{position:absolute;font-size:26px;color:var(--t2);white-space:nowrap;background:rgba(10,22,40,.9);padding:2px 5px;border-radius:var(--r4);pointer-events:none;z-index:3;line-height:1.3;text-align:center;top:calc(50% + 12px);transform:translateX(-50%);border:1px solid var(--b)}
+.gftr{padding:10px 14px;border-top:1px solid var(--b3);display:flex;gap:16px;background:rgba(255,255,255,.02);flex-wrap:wrap}
+
+/* ── NOTES ── */
+.note{
+  background:var(--bg3);
+  border-radius:var(--r8);
+  padding:10px 14px;margin-bottom:10px;
+  border:1px solid var(--b3);
+  border-right:3px solid var(--blue2);background:#f0f7ff;
+  position:relative;
+}
+.note-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.note-user{font-size:11px;font-weight:700;color:#60a5fa}
+.note-date{font-size:11px;color:var(--t4)}
+.note-text{font-size:28px;line-height:1.5;color:var(--t2)}
+
+/* ── PROC CARD ── */
+.pcard{
+  background:var(--bg3);
+  border-radius:var(--r10);
+  padding:12px 14px;margin-bottom:10px;
+  border:1px solid var(--b);
+  transition:border-color .15s;
+}
+
+/* ── APPROVAL ROW ── */
+.arow{
+  background:var(--bg4);
+  border:1px solid var(--b);
+  border-radius:var(--r10);
+  padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;gap:12px;
+  flex-wrap:wrap;
+  transition:border-color .2s,box-shadow .2s;
+}
+.arow:hover{border-color:var(--b2);box-shadow:var(--shadow-sm)}
+
+/* ── UPLOAD ZONE ── */
+.upz{
+  border:2px dashed var(--b2);border-radius:var(--r10);
+  padding:28px 20px;text-align:center;cursor:pointer;
+  background:var(--bg3);transition:all .2s;
+}
+.upz:hover,.upz.drag{border-color:var(--blue);background:rgba(59,130,246,.06);box-shadow:inset 0 0 0 1px rgba(59,130,246,.15)}
+
+/* ── STEPPER ── */
+.step-dot{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:700;flex-shrink:0;border:2px solid;
+  transition:all .2s;
+}
+
+/* ── USER CHIP ── */
+.uchip{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 10px 5px 6px;
+  border:1px solid var(--b);border-radius:24px;
+  cursor:pointer;font-size:28px;color:var(--t3);
+  background:rgba(255,255,255,.03);
+  transition:all .15s;white-space:nowrap;
+}
+.uchip:hover{border-color:var(--b2);background:rgba(255,255,255,.06)}
+
+/* ── LOG ROW ── */
+.log-row{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:10px 0;border-bottom:1px solid rgba(30,58,95,.4);
+}
+.log-row:last-child{border-bottom:none}
+.log-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+
+
+/* ── TOOLTIP ── */
+.tt{
+  position:fixed;z-index:999;pointer-events:none;
+  background:rgba(255,255,255,.98);
+  border:1px solid var(--b2);
+  border-radius:var(--r10);
+  padding:12px 14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  min-width:180px;max-width:280px;
+  font-size:28px;line-height:1.5;
+  color:var(--t);
+  opacity:0;transition:opacity .12s;
+  backdrop-filter:blur(8px);
+  box-shadow:0 8px 32px rgba(0,0,0,.15);
+}
+.tt.show{opacity:1}
+.tt-title{font-weight:700;font-size:11px;color:#0f172a;margin-bottom:6px;border-bottom:1px solid var(--b3);padding-bottom:5px}
+.tt-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:3px}
+.tt-lbl{color:#64748b;font-size:11px}
+.tt-val{font-weight:600;color:#0f172a;font-family:'IBM Plex Mono',monospace;font-size:11px}
+.tt-val.ok{color:#4ade80}
+.tt-val.err{color:#f87171}
+.tt-val.warn{color:#fbbf24}
+.tt-chip{display:inline-flex;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;margin-top:4px}
+
+/* ── SPINNER ── */
+.spin{width:40px;height:40px;border:3px solid var(--b);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── CF BADGE ── */
+.cfbdg{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:var(--r4);padding:3px 8px;font-size:11px;color:#f87171}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at top right,rgba(37,99,235,.06) 0%,transparent 60%)}
+.login-box{
+  background:var(--bg2);
+  border:1px solid var(--b);
+  border-radius:var(--r16);
+  padding:40px 36px;
+  width:100%;max-width:400px;
+  box-shadow:var(--shadow);
+  position:relative;overflow:hidden;
+}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,var(--blue),var(--purple2))}
+.login-logo{font-size:11px;font-weight:800;color:#f8fafc;margin-bottom:4px;display:flex;align-items:center;gap:10px;letter-spacing:-.5px}
+.login-sub{font-size:11px;color:var(--t3);margin-bottom:28px}
+.saving-pulse{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3)}
+.saving-dot{width:6px;height:6px;border-radius:50%;background:var(--blue2);animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── PROGRESS BAR ── */
+.pbar{height:4px;border-radius:2px;background:var(--b3);overflow:hidden;margin-top:4px}
+.pbar-fill{height:100%;border-radius:2px;transition:width .5s ease}
+
+/* ── DIFF CHIP ── */
+.diff-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.diff-pos{background:#fee2e2;color:#7f1d1d;border:1px solid #f87171}
+.diff-neg{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.diff-zero{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr}
+  .main{padding:12px}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+<div id="tt" class="tt"></div>
+<div id="root" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div class="spin"></div>
+    <div style="color:#64748b">טוען...</div>
+  </div>
+</div>
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,doc,getDocs,addDoc,updateDoc,setDoc,getDoc,deleteDoc,serverTimestamp,query,orderBy,limit}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updatePassword}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const FC={apiKey:"AIzaSyBgc1kQ6w4qyqu5hyrTMoxhmHH0_Q-JR-k",authDomain:"adsproject-5bcb0.firebaseapp.com",projectId:"adsproject-5bcb0",storageBucket:"adsproject-5bcb0.firebasestorage.app",messagingSenderId:"687657204136",appId:"1:687657204136:web:9a0b1a5f10aa407756059d"};
+const fbApp=initializeApp(FC);
+const db=getFirestore(fbApp);
+const auth=getAuth(fbApp);
+
+// ── CONSTANTS ─────────────────────────────────────────────────
+const TODAY=new Date();
+const MONTHS=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const DH=['א','ב','ג','ד','ה','ו','ש'];
+const STATS=['ממתין לתכנון','תכנון','ממתין לייצור','ייצור','רכש','ממתין להתקנה','התקנה','הושלם','בוטל'];
+const BARCOL={done:'#16a34a',active:'#2563eb',overdue:'#dc2626',future:'#475569'};
+const SHEB={done:'הושלם',active:'פעיל',overdue:'חריגה',future:'עתידי'};
+const SBDG={done:'bg',active:'bb',overdue:'br',future:'by'};
+const SMAP={'ממתין לתכנון':'by','תכנון':'bb','ממתין לייצור':'bt','ייצור':'bam','רכש':'bpu','ממתין להתקנה':'bt','התקנה':'bg','הושלם':'by','בוטל':'br'};
+const NKEYS={planStart:'יום לפני תחילת תכנון',planEnd:'יום לפני סיום תכנון',prodStart:'יום לפני תחילת ייצור',overdue:'חריגה',procMissing:'רכש ללא תאריך',statusChange:'שינוי סטטוס'};
+const DEF_ROLES=[
+  {id:'admin',name:'מנהל מערכת',color:'#7c3aed'},{id:'pm',name:'מנהל פרויקט',color:'#0f6e56'},
+  {id:'eng',name:'מהנדס תכנון',color:'#1d4ed8'},{id:'prod',name:'ראש ייצור',color:'#b45309'},
+  {id:'proc',name:'רכש',color:'#b91c1c'},{id:'tapi',name:"תפ\"י",color:'#0e7490'},
+];
+const DEF_PROC=['מפוח','ארון חשמל','ברזים','שרוולים','צנרת','ברז פריקה','משתיק קול','בידוד','מנוף'];
+const LOG_ICONS={login:'🔑',logout:'🚪',new_project:'📋',approve:'✅',reject:'❌',update_date:'📅',delete:'🗑️',update_status:'🔄',add_note:'💬',add_user:'👤',delete_user:'🗑️',update_user:'✏️'};
+const LOG_LABELS={login:'כניסה למערכת',logout:'יציאה מהמערכת',new_project:'פרויקט חדש נפתח',approve:'פרויקט אושר',reject:'פרויקט נדחה',update_date:'תאריך עודכן',delete:'פרויקט נמחק',update_status:'סטטוס עודכן',add_note:'הערה נוספה',add_user:'משתמש נוסף',delete_user:'משתמש נמחק',update_user:'משתמש עודכן'};
+
+// ── STATE ─────────────────────────────────────────────────────
+const S={
+  authUser:null,currentUser:null,
+  view:'dashboard',
+  projects:[],users:[],roles:[...DEF_ROLES],pmaster:[...DEF_PROC],
+  modal:null,md:{},
+  dashFilter:{status:'all',client:'',agent:'all'},
+  projFilter:{status:'all',search:'',agent:'all'},
+  gt:'planning',vm:'month',vo:0,fe:'all',
+  at:'users',logFilter:'all',logPage:0,
+  nf:{},fs:1,ferr:{},
+  nn:'',mt:'schedule',
+  loading:true,saving:false,
+  loginEmail:'',loginPass:'',loginErr:'',
+  pin:['','','',''],pinErr:false,adminOK:false,
+};
+
+// ── DATE HELPERS ──────────────────────────────────────────────
+const addD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const diffD=(a,b)=>{const da=toD(a),db=toD(b);if(!da||!db)return 0;const u=d=>Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());return Math.round((u(db)-u(da))/86400000);};
+const isWE=d=>new Date(d).getDay()===5||new Date(d).getDay()===6;
+const nextBiz=d=>{let r=addD(d,1);while(isWE(r))r=addD(r,1);return r;};
+const bizEnd=(s,h)=>{let d=new Date(s),r=Math.ceil((h||1)/8);while(r>0){d=addD(d,1);if(!isWE(d))r--;}return d;};
+const toD=v=>{if(!v)return null;if(v instanceof Date)return new Date(v);if(typeof v==='string')return new Date(v);if(v.toDate)return v.toDate();if(v.seconds)return new Date(v.seconds*1000);return null;};
+const toISO=d=>{const dt=toD(d);return dt?dt.toISOString().split('T')[0]:'';};
+const fmtD=d=>{const dt=toD(d);if(!dt||isNaN(dt))return'—';return`${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;};
+const fmtS=d=>{const dt=toD(d);if(!dt||isNaN(dt))return'';return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');};
+const fmtTS=d=>{const dt=toD(d);if(!dt||isNaN(dt))return'—';return`${fmtD(dt)} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;};
+const pct=(d,vs,ve)=>{const dt=toD(d);if(!dt)return-999;return((dt-vs)/(ve-vs))*100;};
+const wpct=(s,e,vs,ve)=>{const ds=toD(s),de=toD(e);if(!ds||!de)return 0;const cs=Math.max(ds,vs),ce=Math.min(de,ve);return Math.max(0,((ce-cs)/(ve-vs))*100);};
+const pid=p=>p.id||p._fid;
+const cu=()=>S.currentUser;
+const ini=n=>(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const getRole=id=>S.roles.find(r=>r.id===id)||{name:'?',color:'#64748b'};
+const getUser=id=>S.users.find(u=>u.id===id);
+const agents=()=>S.users.filter(u=>u.isAgent&&u.active!==false);
+const engs=()=>S.users.filter(u=>u.roleId==='eng'&&u.active!==false);
+const prods=()=>S.users.filter(u=>u.roleId==='prod'&&u.active!==false);
+const av=(u,sz=26)=>{if(!u)return`<span class="av" style="width:${sz}px;height:${sz}px;background:#1e293b;color:#64748b;font-size:${sz*.38}px">?</span>`;const r=getRole(u.roleId);return`<span class="av" style="width:${sz}px;height:${sz}px;background:${r.color}22;color:${r.color};font-size:${sz*.38}px">${ini(u.name)}</span>`;};
+const bdg=(c,l)=>`<span class="bdg ${c}">${l}</span>`;
+const sbdg=p=>{const eff=computeAutoStatus(p);return bdg(SMAP[eff]||'by',eff||'—');};
+const barSt=(p,t)=>{const e=toD(t==='planning'?p.planEnd:p.prodEnd),a=toD(t==='planning'?p.actualPlanEnd:p.actualProdEnd),s=toD(t==='planning'?p.planStart:p.prodStart);if(a)return'done';if(e&&e<TODAY)return'overdue';if(s&&s>TODAY)return'future';return'active';};
+const hasCf=(p,s,e,t)=>{const eid=t==='planning'?p.engineerId:p.prodManagerId;if(!eid)return false;return S.projects.filter(x=>pid(x)!==pid(p)&&(t==='planning'?x.engineerId===eid:x.prodManagerId===eid)).some(x=>{const xs=toD(t==='planning'?x.planStart:x.prodStart),xe=toD(t==='planning'?x.planEnd:x.prodEnd);return xs&&xe&&s<=xe&&e>=xs;});};
+const sugStart=(p,t)=>{let d=new Date(TODAY);while(isWE(d))d=addD(d,1);for(let i=0;i<180;i++){const e=bizEnd(d,p.planHours||30);if(!hasCf(p,d,e,t))return d;d=addD(d,1);while(isWE(d))d=addD(d,1);}return new Date(TODAY);};
+const getVR=()=>{if(S.vm==='week'){const dow=TODAY.getDay(),sun=addD(TODAY,-dow),s=addD(sun,S.vo*7);return{start:s,end:addD(s,27)};}const b=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),s=new Date(b.getFullYear(),b.getMonth()+S.vo,1),e=new Date(s.getFullYear(),s.getMonth()+3,0);return{start:s,end:e};};
+const defNotif=()=>({planStart:false,planEnd:false,prodStart:false,overdue:false,procMissing:false,statusChange:false});
+const isAdmin=()=>S.currentUser?.roleId==='admin';
+
+const statPct=s=>({'ממתין לתכנון':5,'תכנון':20,'ממתין לייצור':35,'ייצור':50,'רכש':65,'ממתין להתקנה':75,'התקנה':85,'הושלם':100}[s]||0);
+const statCol=s=>({'ממתין לתכנון':'var(--t4)','תכנון':'var(--blue)','ממתין לייצור':'var(--teal)','ייצור':'var(--amber)','רכש':'var(--purple)','ממתין להתקנה':'var(--teal)','התקנה':'var(--green2)','הושלם':'var(--green)'}[s]||'var(--b2)');
+const sbdgP=p=>{
+  // Always compute fresh status from dates, not stored status
+  const eff=computeAutoStatus(p);
+  const wd=waitingDays({...p,status:eff});
+  const isWaiting=eff?.startsWith('ממתין');
+  const wdChip=isWaiting&&wd&&wd>0?`<span style="font-size:26px;color:#fbbf24;margin-right:4px">⏳${wd}י</span>`:'';
+  return`<div>${wdChip}${bdg(SMAP[eff]||'by',eff||'—')}<div class="pbar"><div class="pbar-fill" style="width:${statPct(eff)}%;background:${statCol(eff)}"></div></div></div>`;
+};
+
+
+
+// ── EMAILJS ───────────────────────────────────────────────────
+const EJS_SVC  = 'service_5mlt8fh';
+const EJS_TPL  = 'template_ctyugdk';
+const EJS_KEY  = '9GfdXjaIbE64CI40D';
+
+function ejsInit(){
+  if(window.emailjs)window.emailjs.init({publicKey:EJS_KEY});
+}
+setTimeout(ejsInit,1000);
+
+// Send notification to a single recipient
+async function sendMail(toName,toEmail,notifType,message,projectName){
+  if(!window.emailjs){console.warn('EmailJS not loaded');return;}
+  try{
+    await window.emailjs.send(EJS_SVC,EJS_TPL,{
+      to_name:toName,
+      to_email:toEmail,
+      notification_type:notifType,
+      message,
+      project_name:projectName||'',
+      date:new Date().toLocaleDateString('he-IL'),
+      name:'ProjectFlow',
+      email:'noreply@projectflow',
+    });
+    console.log('Mail sent to',toEmail);
+  }catch(e){
+    console.error('EmailJS error:',e);
+  }
+}
+
+// Send notification to all users who have a given notif key enabled
+async function notifyUsers(notifKey, notifType, message, projectName){
+  const targets=S.users.filter(u=>u.active!==false&&u.email&&(u.notif||{})[notifKey]);
+  for(const u of targets){
+    await sendMail(u.name, u.email, notifType, message, projectName);
+  }
+}
+
+// ── Check daily alerts (overdue + upcoming) ──
+async function checkDailyAlerts(){
+  const tomorrow=new Date(TODAY);tomorrow.setDate(tomorrow.getDate()+1);
+  const tmStr=tomorrow.toDateString();
+  for(const p of S.projects){
+    if(p.status==='הושלם'||p.rejected)continue;
+    const client=p.client||'';
+    // overdue planning
+    if(!p.actualPlanEnd&&p.planEnd&&toD(p.planEnd)<TODAY){
+      await notifyUsers('overdue','⚠ חריגה בתכנון',
+        `פרויקט ${client} חרג מתאריך סיום התכנון המתוכנן (${fmtD(p.planEnd)})`,client);
+    }
+    // overdue production
+    if(!p.actualProdEnd&&p.prodEnd&&toD(p.prodEnd)<TODAY&&p.status!=='תכנון'){
+      await notifyUsers('overdue','⚠ חריגה בייצור',
+        `פרויקט ${client} חרג מתאריך סיום הייצור המתוכנן (${fmtD(p.prodEnd)})`,client);
+    }
+    // day before plan end
+    if(!p.actualPlanEnd&&p.planEnd&&toD(p.planEnd)?.toDateString()===tmStr){
+      await notifyUsers('planEnd','📅 מחר סיום תכנון',
+        `מחר (${fmtD(p.planEnd)}) הוא יום סיום התכנון המתוכנן של פרויקט ${client}`,client);
+    }
+    // day before plan start
+    if(!p.actualPlanStart&&p.planStart&&toD(p.planStart)?.toDateString()===tmStr){
+      await notifyUsers('planStart','📅 מחר תחילת תכנון',
+        `מחר (${fmtD(p.planStart)}) אמורה להתחיל עבודת התכנון על פרויקט ${client}`,client);
+    }
+    // day before prod start
+    if(!p.actualProdStart&&p.prodStart&&toD(p.prodStart)?.toDateString()===tmStr){
+      await notifyUsers('prodStart','📅 מחר תחילת ייצור',
+        `מחר (${fmtD(p.prodStart)}) אמורה להתחיל עבודת הייצור של פרויקט ${client}`,client);
+    }
+    // procurement missing date
+    const missingProc=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived&&!i.expected);
+    if(missingProc.length){
+      await notifyUsers('procMissing','📦 רכש ללא תאריך',
+        `פרויקט ${client} — ${missingProc.length} אביזרים ללא תאריך אספקה: ${missingProc.map(i=>i.name).join(', ')}`,client);
+    }
+  }
+}
+
+
+// ── AUDIT LOG ─────────────────────────────────────────────────
+async function logAction(type,detail=''){
+  if(!S.currentUser)return;
+  try{
+    await addDoc(collection(db,'audit'),{
+      type,detail,
+      userId:S.currentUser.id,
+      userName:S.currentUser.name,
+      userEmail:S.currentUser.email,
+      ts:new Date().toISOString(),
+    });
+  }catch(e){console.error('logAction',e);}
+}
+
+// ── FIREBASE OPS ──────────────────────────────────────────────
+function serProj(p){
+  const{_fid,...d}=p;
+  const ser=v=>{
+    if(v===undefined||v===null)return null;
+    if(v instanceof Date)return v.toISOString();
+    if(Array.isArray(v))return v.map(i=>{
+      if(!i||typeof i!=='object')return i;
+      return Object.fromEntries(Object.entries(i).map(([k,vv])=>[k,vv instanceof Date?vv.toISOString():vv??null]));
+    });
+    return v;
+  };
+  return Object.fromEntries(Object.entries(d).map(([k,v])=>[k,ser(v)]));
+}
+async function fbSaveProj(p){
+  S.saving=true;render();
+  try{
+    const clean=serProj(p);
+    if(p._fid){await updateDoc(doc(db,'projects',p._fid),clean);}
+    else{const r=await addDoc(collection(db,'projects'),clean);p._fid=r.id;}
+  }catch(e){console.error('fbSaveProj',e);}
+  S.saving=false;render();
+  return p;
+}
+async function fbSaveSettings(){
+  try{await setDoc(doc(db,'settings','main'),{users:JSON.stringify(S.users),pmaster:JSON.stringify(S.pmaster)});}
+  catch(e){console.error('fbSaveSettings',e);}
+}
+// ── AUTO STATUS ───────────────────────────────────────────────
+function computeAutoStatus(p){
+  // Only override stored status in clear-cut cases based on actual dates
+  // 1. Install done → הושלם
+  if(p.actualInstallDate)return'הושלם';
+  // 2. Prod done but status still shows ייצור → ממתין להתקנה
+  if(p.actualProdEnd&&(p.status==='ייצור'||p.status==='רכש'))return'ממתין להתקנה';
+  // 3. Plan done but status still shows תכנון → ממתין לייצור
+  if(p.actualPlanEnd&&p.status==='תכנון')return'ממתין לייצור';
+  // 4. Newly approved (status not yet updated from old 'תכנון' default)
+  //    Only if plan hasn't actually started (no actualPlanStart)
+  if(p.approved&&!p.actualPlanStart&&!p.actualPlanEnd&&
+    (p.status==='תכנון'||!p.status)){
+    // Check if planStart is in the future → waiting
+    const ps=toD(p.planStart);
+    if(!ps||ps>TODAY)return'ממתין לתכנון';
+    // planStart passed but no actualPlanStart recorded → still waiting (user didn't click button)
+    // Don't assume they started - they need to click the button
+    return'ממתין לתכנון';
+  }
+  // 5. Trust stored status
+  return p.status||'תכנון';
+}
+
+// Compute waiting days for a status
+function waitingDays(p){
+  // Use computed status, not stored status
+  const s=computeAutoStatus(p);
+  const now=TODAY;
+  if(s==='ממתין לתכנון'){
+    const approvedDate=toD(p.approvedDate||p.approvedAt);
+    if(approvedDate)return diffD(approvedDate,now);
+    // Fallback: days since project was created (first note)
+    const created=toD(p.notes?.[0]?.date);
+    if(created)return diffD(created,now);
+  }
+  if(s==='ממתין לייצור'&&p.actualPlanEnd){
+    return diffD(p.actualPlanEnd,now);
+  }
+  if(s==='ממתין להתקנה'&&p.actualProdEnd){
+    return diffD(p.actualProdEnd,now);
+  }
+  return null;
+}
+
+async function fbLoadAll(){
+  try{
+    const[projSnap,settSnap]=await Promise.all([getDocs(collection(db,'projects')),getDoc(doc(db,'settings','main'))]);
+    S.projects=[];
+    projSnap.forEach(d=>{
+      try{S.projects.push({...d.data(),_fid:d.id});}
+      catch(e){console.warn('Bad project doc:',d.id,e);}
+    });
+    if(settSnap.exists()){
+      const d=settSnap.data();
+      if(d.users)try{const u=JSON.parse(d.users);if(Array.isArray(u)&&u.length>0)S.users=u;}catch(e){}
+      if(d.pmaster)try{const pm=JSON.parse(d.pmaster);if(Array.isArray(pm))S.pmaster=pm;}catch(e){}
+    }
+  }catch(e){console.error('fbLoadAll',e);}
+  // Sync status for existing projects based on actual dates
+  S.projects=S.projects.map(p=>{
+    const computed=computeAutoStatus(p);
+    // debug: console.log('STATUS SYNC:',p.client,'computed:',computed);
+    if(computed!==p.status){
+      const updated={...p,status:computed};
+      fbSaveProj(updated);
+      return updated;
+    }
+    return p;
+  });
+}
+// Save queue to prevent rapid concurrent saves
+const _saveQ={};
+function upProj(id,changes){
+  S.projects=S.projects.map(p=>{if(pid(p)!==id)return p;return{...p,...changes};});
+  render();
+  // Debounce saves: wait 400ms after last change before saving
+  clearTimeout(_saveQ[id]);
+  _saveQ[id]=setTimeout(()=>{
+    const p=S.projects.find(x=>pid(x)===id);
+    if(p)fbSaveProj(p);
+  },400);
+}
+async function loadAuditLogs(){
+  try{
+    const snap=await getDocs(query(collection(db,'audit'),orderBy('ts','desc'),limit(200)));
+    S.auditLogs=[];snap.forEach(d=>S.auditLogs.push({...d.data(),_fid:d.id}));
+  }catch(e){S.auditLogs=[];}
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+async function doLogin(){
+  const email=(document.getElementById('li_email')?.value||'').trim();
+  const pass=document.getElementById('li_pass')?.value||'';
+  if(!email||!pass){
+    document.getElementById('root').innerHTML=renderLogin('נא למלא אימייל וסיסמא');
+    return;
+  }
+  document.getElementById('root').innerHTML=renderLogin('טוען...',true);
+  try{
+    await signInWithEmailAndPassword(auth,email,pass);
+    // onAuthStateChanged will handle the rest
+  }catch(e){
+    const msgs={
+      'auth/user-not-found':'משתמש לא קיים',
+      'auth/wrong-password':'סיסמא שגויה',
+      'auth/invalid-email':'אימייל לא תקין',
+      'auth/invalid-credential':'אימייל או סיסמא שגויים',
+      'auth/too-many-requests':'יותר מדי ניסיונות — נסה שוב מאוחר יותר',
+    };
+    const errMsg=msgs[e.code]||'שגיאה: '+e.message;
+    document.getElementById('root').innerHTML=renderLogin(errMsg);
+  }
+}
+async function doLogout(){
+  await logAction('logout');
+  await signOut(auth);
+}
+
+// ── RENDER: LOGIN ─────────────────────────────────────────────
+function renderLogin(errMsg,loading){
+  const isLoading=!!loading;
+  return`<div class="login-wrap">
+    <div class="login-box">
+      <div class="login-logo"><div class="logo-icon">⚙</div>ProjectFlow</div>
+      <div class="login-sub">מערכת ניהול פרויקטים</div>
+      <div class="fld"><label class="fl">אימייל</label>
+        <input id="li_email" class="fi" type="email" placeholder="user@company.com"
+          autocomplete="username"
+          onkeydown="if(event.key==='Enter')document.getElementById('li_pass')?.focus()">
+      </div>
+      <div class="fld"><label class="fl">סיסמא</label>
+        <input id="li_pass" class="fi" type="password" placeholder="••••••••"
+          autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      ${errMsg?`<div class="alert ${isLoading?'ai':'ae'}" style="margin-bottom:12px">${errMsg}</div>`:''}
+      <button class="btn pri" style="width:100%;padding:11px;font-size:16px;font-weight:600;border-radius:var(--r8);margin-top:4px" onclick="doLogin()" ${isLoading?'disabled':''}>
+        ${isLoading?'<span style="opacity:.7">טוען...</span>':'כניסה למערכת ←'}
+      </button>
+      <div style="margin-top:16px;font-size:16px;color:var(--t3);text-align:center">פנה למנהל המערכת לקבלת פרטי גישה</div>
+    </div>
+  </div>`;
+}
+
+// ── RENDER: TOPBAR ────────────────────────────────────────────
+function renderTopbar(){
+  const u=cu(),pend=S.projects.filter(p=>!p.approved&&!p.rejected).length;
+  const views=[['dashboard','לוח בקרה'],['projects','פרויקטים'],['gantt','גאנטים'],['milestones','אבני דרך'],['approval','אישור'+(pend?` (${pend})`:'')]];
+  return`<div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;overflow:hidden">
+      <div class="logo"><div class="logo-icon">⚙</div>ProjectFlow</div>
+      <div class="nav">${views.map(([k,l])=>`<button class="btn${S.view===k?' act':''}" onclick="V('view','${k}')">${l}</button>`).join('')}
+        <button class="btn${S.view==='admin'?' act':''}" onclick="${S.adminOK?"V('view','admin')":'openAL()'}" style="color:#a78bfa">🔒 ניהול</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      ${S.saving?`<div class="saving-pulse"><div class="saving-dot"></div><span>שומר...</span></div>`:''}
+      <button class="btn pri sm" onclick="openNP()">+ פרויקט חדש</button>
+      <div class="uchip">${av(u,24)}<span>${u?.name||''}</span><button onclick="doLogout()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;padding:0 2px" title="יציאה">↩</button></div>
+    </div>
+  </div>`;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+function renderDash(){
+  // ── Filters ──
+  const df=S.dashFilter||{status:'all',client:'',agent:'all'};
+  const allPs=S.projects;
+  const act=allPs.filter(p=>{
+    const eff=computeAutoStatus(p);
+    if(df.status!=='all'&&eff!==df.status)return false;
+    if(df.client&&!p.client?.toLowerCase().includes(df.client.toLowerCase()))return false;
+    if(df.agent!=='all'&&p.agentId!==df.agent)return false;
+    if(p.cancelled&&df.status!=='בוטל')return false;
+    return p.status!=='הושלם'||df.status==='הושלם'||df.status==='בוטל';
+  });
+  const ps=allPs;
+  const ov=allPs.filter(p=>barSt(p,'planning')==='overdue'||barSt(p,'production')==='overdue');
+  const pend=allPs.filter(p=>!p.approved&&!p.rejected);
+  // Helper: procurement status
+  const procStatus=p=>{
+    const proc=(p.procurement||[]).filter(i=>!i.cancelled);
+    if(!proc.length)return null; // no items
+    if(proc.every(i=>i.arrived))return'arrived';      // כולם הגיעו
+    if(proc.every(i=>i.arrived||i.ordered))return'ordered'; // כולם הוזמנו
+    return'missing'; // חלק לא הוזמנו
+  };
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <div><div class="page-title">לוח בקרה</div><div style="font-size:16px;color:var(--t3)">${fmtD(TODAY)} · שלום, ${cu()?.name}</div></div>
+    </div>
+    <!-- Filters bar -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r10)">
+      <span style="font-size:16px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0">סינון:</span>
+      <select class="fi" style="flex:1;min-width:130px;font-size:28px;padding:6px 10px"
+        onchange="setDashFilter('status',this.value)">
+        <option value="all" ${df.status==='all'?'selected':''}>כל הסטטוסים</option>
+        ${STATS.map(s=>`<option value="${s}" ${df.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <div style="flex:2;min-width:160px;position:relative">
+        <span style="position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:29px">🔍</span>
+        <input id="dash_search" class="fi" style="padding-right:30px;font-size:28px"
+          placeholder="סינון לפי לקוח..."
+          value="${df.client||''}"
+          oninput="setDashFilter('client',this.value)">
+      </div>
+      <select class="fi" style="flex:1;min-width:130px;font-size:28px;padding:6px 10px"
+        onchange="setDashFilter('agent',this.value)">
+        <option value="all" ${df.agent==='all'?'selected':''}>כל הסוכנים</option>
+        ${agents().map(u=>`<option value="${u.id}" ${df.agent===u.id?'selected':''}>${u.name}</option>`).join('')}
+      </select>
+      ${df.status!=='all'||df.client||df.agent!=='all'
+        ?`<button class="btn sm sec" onclick="clearDashFilter()">✕ נקה</button>`:''}
+      <span style="font-size:16px;color:var(--t3);white-space:nowrap;flex-shrink:0">${act.length} פרויקטים</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-v" style="color:#60a5fa">${act.length}</div><div class="kpi-l">פרויקטים פעילים</div><div class="kpi-icon">📊</div></div>
+      <div class="kpi amber"><div class="kpi-v" style="color:#fbbf24">${pend.length}</div><div class="kpi-l">ממתינים לאישור</div><div class="kpi-icon">⏳</div></div>
+      <div class="kpi red"><div class="kpi-v" style="color:#f87171">${ov.length}</div><div class="kpi-l">חריגות בזמן</div><div class="kpi-icon">⚠️</div></div>
+      <div class="kpi green"><div class="kpi-v" style="color:#4ade80">${ps.filter(p=>p.status==='הושלם').length}</div><div class="kpi-l">הושלמו</div><div class="kpi-icon">✅</div></div>
+    </div>
+    ${ov.length?`<div class="alert ae" style="margin-bottom:14px">⚠️ חריגות: ${ov.map(p=>`<strong>${p.client}</strong>`).join(', ')}</div>`:''}
+    <div class="card">
+      <div class="card-hdr"><div class="card-hdr-title">פרויקטים פעילים</div></div>
+      <div style="overflow-x:auto">
+      <table style="min-width:900px"><thead><tr>
+        <th>לקוח</th><th>הזמנה</th><th>סוכן</th><th>מתכנן</th>
+        <th>סטטוס</th><th>פתיחה</th><th>סיום תכנון</th>
+        <th>סיום ייצור</th><th>התקנה</th><th>רכש</th>
+      </tr></thead>
+      <tbody>${act.length?act.map(p=>{
+        const eng=getUser(p.engineerId),ag=getUser(p.agentId);
+        const ps=procStatus(p);
+        const procStatusHtml=ps===null
+          ?`<span style="color:var(--t4);font-size:11px">—</span>`
+          :ps==='arrived'
+            ?`<span class="bdg bg" style="font-size:10px">✓ הגיע</span>`
+            :ps==='ordered'
+              ?`<span class="bdg bb" style="font-size:10px">✓ הוזמן</span>`
+              :`<span class="bdg br" style="font-size:10px">⚠ לא הוזמן</span>`;
+        const ov2=barSt(p,'planning')==='overdue'||barSt(p,'production')==='overdue';
+        return`<tr class="row" style="${ov2?'background:rgba(239,68,68,.04)':''}" onclick="openPD('${pid(p)}')">
+          <td style="font-weight:600">${p.client||'—'}</td>
+          <td class="mono" style="color:var(--t3)">${p.orderNum||'—'}</td>
+          <td>${av(ag,20)} <span style="font-size:16px">${ag?.name||'—'}</span></td>
+          <td>${av(eng,20)} <span style="font-size:16px">${eng?.name||'—'}</span></td>
+          <td>${sbdgP(p)}</td>
+          <td class="mono" style="color:var(--t3);font-size:16px">${fmtD(p.notes?.[0]?.date||p.planStart)}</td>
+          <td class="mono" style="${barSt(p,'planning')==='overdue'?'color:#f87171':'color:var(--t)'}">${fmtD(p.planEnd)}</td>
+          <td class="mono" style="${barSt(p,'production')==='overdue'?'color:#f87171':'color:var(--t)'}">${fmtD(p.prodEnd)}</td>
+          <td class="mono" style="color:#10b981;font-weight:600">${fmtD(p.installDate)}</td>
+          <td>${procStatusHtml}</td>
+        </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📋</div><div style="color:var(--t3);font-size:29px">אין פרויקטים פעילים</div><div style="color:var(--t4);font-size:16px;margin-top:4px">לחץ "פרויקט חדש" כדי להתחיל</div></td></tr>`}
+      </tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── PROJECTS ──────────────────────────────────────────────────
+function renderProjects(){
+  const pf=S.projFilter||{status:'all',search:'',agent:'all'};
+  const filtered=S.projects.filter(p=>{
+    const eff=computeAutoStatus(p);
+    if(pf.status!=='all'&&eff!==pf.status)return false;
+    if(pf.agent!=='all'&&p.agentId!==pf.agent)return false;
+    if(pf.search){
+      const q=pf.search.toLowerCase();
+      const inClient=(p.client||'').toLowerCase().includes(q);
+      const inOrder=(p.orderNum||'').toLowerCase().includes(q);
+      const ag=getUser(p.agentId);
+      const inAgent=(ag?.name||'').toLowerCase().includes(q);
+      if(!inClient&&!inOrder&&!inAgent)return false;
+    }
+    if(p.cancelled&&pf.status!=='בוטל')return false;
+    return true;
+  });
+  const hasFilter=pf.status!=='all'||pf.search||pf.agent!=='all';
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <div class="page-title">כל הפרויקטים</div>
+      <button class="btn pri" onclick="openNP()">+ פרויקט חדש</button>
+    </div>
+    <!-- Search & Filters -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r10)">
+      <div style="flex:2;min-width:200px;position:relative">
+        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none">🔍</span>
+        <input id="proj_search" class="fi" style="padding-right:32px;font-size:28px"
+          placeholder="חיפוש לפי לקוח / הזמנה / סוכן..."
+          value="${pf.search||''}"
+          oninput="setProjFilter('search',this.value)">
+      </div>
+      <select class="fi" style="flex:1;min-width:140px;font-size:28px;padding:6px 10px"
+        onchange="setProjFilter('status',this.value)">
+        <option value="all" ${pf.status==='all'?'selected':''}>כל הסטטוסים</option>
+        ${STATS.map(s=>`<option value="${s}" ${pf.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <select class="fi" style="flex:1;min-width:140px;font-size:28px;padding:6px 10px"
+        onchange="setProjFilter('agent',this.value)">
+        <option value="all" ${pf.agent==='all'?'selected':''}>כל הסוכנים</option>
+        ${agents().map(u=>`<option value="${u.id}" ${pf.agent===u.id?'selected':''}>${u.name}</option>`).join('')}
+      </select>
+      ${hasFilter?`<button class="btn sm sec" onclick="clearProjFilter()">✕ נקה</button>`:''}
+      <span style="font-size:16px;color:var(--t3);white-space:nowrap;flex-shrink:0">${filtered.length} מתוך ${S.projects.length}</span>
+    </div>
+    <div class="card" style="overflow-x:auto">
+    <table style="min-width:900px"><thead><tr>
+      <th>לקוח</th><th>הזמנה</th><th>סוג</th><th>סוכן</th><th>מתכנן</th>
+      <th>סטטוס</th><th>תחילת תכנון</th><th>סיום ייצור</th><th>התקנה</th><th>אושר</th>
+    </tr></thead>
+    <tbody>${filtered.length?filtered.map(p=>{
+      const ag=getUser(p.agentId),eng=getUser(p.engineerId);
+      const eff=computeAutoStatus(p);
+      const q=pf.search?.toLowerCase();
+      const hl=t=>q&&t?.toLowerCase().includes(q)
+        ?t.replace(new RegExp(q,'gi'),m=>`<mark style="background:#fbbf2444;color:#fbbf24;border-radius:2px">${m}</mark>`)
+        :t;
+      return`<tr class="row" onclick="openPD('${pid(p)}')">
+        <td style="font-weight:600">${hl(p.client||'—')}</td>
+        <td class="mono" style="color:var(--t3)">${hl(p.orderNum||'—')}</td>
+        <td style="font-size:16px">${p.projectType||'—'}</td>
+        <td>${av(ag,20)} <span style="font-size:16px">${hl(ag?.name||'—')}</span></td>
+        <td>${av(eng,20)} <span style="font-size:16px">${eng?.name||'—'}</span></td>
+        <td>${sbdgP(p)}</td>
+        <td class="mono" style="font-size:16px">${fmtD(p.planStart)}</td>
+        <td class="mono" style="font-size:16px;color:${barSt(p,'production')==='overdue'?'#f87171':'var(--t2)'}">${fmtD(p.prodEnd)}</td>
+        <td class="mono" style="color:#10b981;font-weight:600">${fmtD(p.installDate)}</td>
+        <td>${p.approved?bdg('bg','✓'):bdg('bam','ממתין')}</td>
+      </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px">
+        <div style="font-size:32px;margin-bottom:10px;opacity:.4">🔍</div>
+        <div style="color:var(--t3);font-size:29px">${hasFilter?'אין תוצאות לחיפוש זה':'אין פרויקטים'}</div>
+        ${hasFilter?`<button class="btn sm sec" style="margin-top:10px" onclick="clearProjFilter()">נקה חיפוש</button>`:''}
+      </td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+// ── GANTT ─────────────────────────────────────────────────────
+function renderGantt(){
+  const{start:vs,end:ve}=getVR();
+  const tp=pct(TODAY,vs,ve),tiv=tp>=0&&tp<=100;
+  const fil=S.projects.filter(p=>S.fe==='all'||p.engineerId===S.fe);
+  let ticks='';
+  if(S.vm==='week'){
+    const days=diffD(vs,ve)+1;
+    for(let i=0;i<days;i++){const d=addD(vs,i),pp=(i/days)*100,w=(1/days)*100,isT=d.toDateString()===TODAY.toDateString(),iw=isWE(d);
+      ticks+=`<div class="tick" style="left:${pp}%;width:${w}%;background:${iw?'#f1f5f9':'transparent'}"><div style="display:flex;flex-direction:column;align-items:center;width:100%;gap:1px"><div style="font-size:10px;color:${isT?'#d97706':iw?'#94a3b8':'#64748b'}">${DH[d.getDay()]}</div><div style="font-size:10px;color:${isT?'#d97706':iw?'#94a3b8':'#64748b'};font-family:'IBM Plex Mono',monospace">${d.getDate()}</div></div></div>`;
+    }
+  }else{
+    let mc=new Date(vs.getFullYear(),vs.getMonth(),1);
+    while(mc<=ve){const me=new Date(mc.getFullYear(),mc.getMonth()+1,0),l=Math.max(0,((mc-vs)/(ve-vs))*100),r=Math.min(100,((addD(me,1)-vs)/(ve-vs))*100);
+      ticks+=`<div class="tick" style="left:${l}%;width:${r-l}%"><span class="tlbl">${MONTHS[mc.getMonth()]} ${mc.getFullYear()}</span></div>`;
+      mc=new Date(mc.getFullYear(),mc.getMonth()+1,1);
+    }
+  }
+  const rows=fil.map(p=>{
+    const eng=getUser(p.engineerId),pm=getUser(p.prodManagerId);
+    let bars='';
+    if(S.gt==='planning'||S.gt==='production'){
+      const t=S.gt,bs=t==='planning'?p.planStart:p.prodStart,be=t==='planning'?p.planEnd:p.prodEnd;
+      const st=barSt(p,t),col=BARCOL[st],l=pct(bs,vs,ve),w=wpct(bs,be,vs,ve),per=t==='planning'?eng:pm;
+      if(w>0.1){
+        const _tt=t==='planning'?buildPlanTT(p):buildProdTT(p);
+        bars+=`<div class="gbar" style="left:${Math.max(0,l)}%;width:${w}%;background:${col}"
+          onclick="openPD('${pid(p)}')"
+          onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_tt)}'),event)"
+          onmousemove="ttPos(event)"
+          onmouseleave="ttHide()"><span>${p.client}${per?' · '+per.name:''}</span></div>`;
+      }
+    }else if(S.gt==='milestones'){
+      // Timeline bar
+      if(p.planStart&&p.installDate){
+        const sl=pct(p.planStart,vs,ve),sw=wpct(p.planStart,p.installDate,vs,ve);
+        if(sw>0)bars+=`<div style="position:absolute;left:${Math.max(0,sl)}%;width:${sw}%;height:3px;background:rgba(100,116,139,.4);top:50%;transform:translateY(-50%);z-index:2;pointer-events:none;border-radius:2px"></div>`;
+      }
+      // Standard milestone diamonds
+      const milestones=[
+        {d:p.planEnd,    c:'#3b82f6',t:'planEnd',  actual:p.actualPlanEnd},
+        {d:p.prodEnd,    c:'#f59e0b',t:'prodEnd',   actual:p.actualProdEnd},
+        {d:p.installDate,c:'#10b981',t:'install',   actual:p.actualInstallDate},
+      ];
+      milestones.filter(m=>m.d).forEach(m=>{
+        const mp=pct(m.d,vs,ve);
+        if(mp>=-2&&mp<=102){
+          const _tt=buildMilestoneTT(p,m.t);
+          const isDone=!!m.actual;
+          const isOverdue=!m.actual&&toD(m.d)&&toD(m.d)<TODAY;
+          const borderStyle=isDone?`box-shadow:0 0 0 2px ${m.c},0 0 8px ${m.c}44`
+            :isOverdue?`box-shadow:0 0 0 2px #ef4444,0 0 8px #ef444444`:'';
+          const col=isOverdue?'#ef4444':m.c;
+          bars+=`<div class="diam" style="left:${mp}%;background:${col};${borderStyle};width:${isDone?14:12}px;height:${isDone?14:12}px;margin-top:${isDone?-7:-6}px"
+            onclick="openPD('${pid(p)}')"
+            onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_tt)}'),event)"
+            onmousemove="ttPos(event)"
+            onmouseleave="ttHide()">
+          </div>`;
+          // Actual date marker (small circle above diamond if done)
+          if(m.actual){
+            const ap=pct(m.actual,vs,ve);
+            if(ap>=-2&&ap<=102){
+              bars+=`<div style="position:absolute;left:${ap}%;top:calc(50% - 16px);transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:${m.c};border:2px solid #0f1e35;z-index:5;pointer-events:none"></div>`;
+            }
+          }
+        }
+      });
+      // Procurement bottleneck diamond (latest expected item not arrived)
+      const procItems=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived&&i.expected);
+      if(procItems.length){
+        const bottleneck=procItems.reduce((max,i)=>(!max||toD(i.expected)>toD(max.expected))?i:max,null);
+        if(bottleneck){
+          const bp=pct(bottleneck.expected,vs,ve);
+          if(bp>=-2&&bp<=102){
+            const installDt=toD(p.installDate);
+            const expDt=toD(bottleneck.expected);
+            const isLate=installDt&&expDt&&expDt>installDt;
+            const _ptt=buildProcTT(p,bottleneck.id);
+            bars+=`<div class="diam" style="left:${bp}%;background:${isLate?'#ef4444':'#a78bfa'};box-shadow:0 0 0 2px ${isLate?'#ef4444':'#7c3aed'},0 0 8px ${isLate?'#ef444433':'#7c3aed33'};width:10px;height:10px;margin-top:-5px"
+              onclick="openPD('${pid(p)}')"
+              onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_ptt)}'),event)"
+              onmousemove="ttPos(event)"
+              onmouseleave="ttHide()">
+            </div>`;
+          }
+        }
+      }
+    }else if(S.gt==='procurement'){
+      (p.procurement||[]).forEach(item=>{const d=item.arrivedDate||item.expected;if(!d)return;const dp=pct(d,vs,ve);if(dp<-3||dp>103)return;const ds=item.cancelled?'can':item.arrived?'arr':toD(d)&&toD(d)<TODAY?'late':'pend';const dc={arr:'#16a34a',late:'#dc2626',pend:'#f59e0b',can:'#475569'},db2={arr:'#15803d',late:'#b91c1c',pend:'#d97706',can:'#334155'},dch={arr:'✓',can:'×',late:'!',pend:'●'};
+        const _ptt=buildProcTT(p,item.id);
+        bars+=`<div class="pdot" style="left:${dp}%;background:${dc[ds]};border-color:${db2[ds]}"
+          onclick="openPM('${pid(p)}','${item.id}')"
+          onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_ptt)}'),event)"
+          onmousemove="ttPos(event)"
+          onmouseleave="ttHide()">${dch[ds]}</div><div class="plbl" style="left:${dp}%">${item.name}<br>→${fmtS(d)}</div>`;
+      });
+    }
+    // For status badge: milestones uses overall project status, others use phase status
+    const getProcSt=pp=>{const proc2=(pp.procurement||[]).filter(i=>!i.cancelled);if(!proc2.length)return'future';if(proc2.every(i=>i.arrived))return'done';if(proc2.every(i=>i.arrived||i.ordered))return'active';return'overdue';};
+    const getProcLabel=pp=>{const proc2=(pp.procurement||[]).filter(i=>!i.cancelled);if(!proc2.length)return'אין אביזרים';const arr=proc2.filter(i=>i.arrived).length;const ord=proc2.filter(i=>i.ordered&&!i.arrived).length;const tot=proc2.length;if(arr===tot)return`✓ הגיע (${tot}/${tot})`;if(arr+ord===tot)return`הוזמן (${arr+ord}/${tot})`;return`לא הוזמן (${tot-(arr+ord)}/${tot})`;};
+    const dst=S.gt==='milestones'
+      ?({'הושלם':'done','ממתין לתכנון':'future','תכנון':'active','ממתין לייצור':'active','ייצור':'active','רכש':'active','ממתין להתקנה':'active','התקנה':'active'}[p.status]||'active')
+      :S.gt==='procurement'?getProcSt(p):barSt(p,S.gt==='production'?'production':'planning');
+    const per2=S.gt==='production'?pm:eng;
+    const ds=S.gt==='planning'?`${fmtS(p.planStart)}→${fmtS(p.planEnd)}`:S.gt==='production'?`${fmtS(p.prodStart)}→${fmtS(p.prodEnd)}`:S.gt==='procurement'?getProcLabel(p):S.gt==='milestones'?fmtS(p.installDate):'';
+    return`<div class="grow"><div class="grl"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:185px">${p.client||'—'}</div><div style="font-size:11px;color:#475569">${per2?.name||'—'} · ${p.orderNum||'—'}</div></div>
+    <div class="grt">${tiv?`<div class="tline" style="left:${tp}%"></div>`:''}${bars}</div>
+    <div class="grd"><div style="font-size:11px;color:#475569;font-family:'IBM Plex Mono',monospace">${ds}</div>${procGanttBadge(dst,S.gt)}</div></div>`;
+  }).join('');
+  return`<div class="main-full">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        ${[['#2563eb','פעיל'],['#16a34a','הושלם'],['#dc2626','חריגה'],['#475569','עתידי']].map(([c,l])=>`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569"><div style="width:10px;height:10px;background:${c};border-radius:2px"></div>${l}</div>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select class="fi" style="width:auto;padding:4px 8px;font-size:16px" onchange="V('fe',this.value)">
+          <option value="all">כל המתכננים</option>
+          ${engs().map(u=>`<option value="${u.id}"${S.fe===u.id?' selected':''}>${u.name}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:1px;background:#0f172a;border-radius:6px;padding:2px">
+          <button class="btn sm${S.vm==='week'?' act':''}" onclick="V('vm','week');V('vo',0)">שבועי</button>
+          <button class="btn sm${S.vm==='month'?' act':''}" onclick="V('vm','month');V('vo',0)">חודשי</button>
+        </div>
+        <button class="btn sm" onclick="V('vo',S.vo-1)">◀</button>
+        <button class="btn sm" onclick="V('vo',0)">היום</button>
+        <button class="btn sm" onclick="V('vo',S.vo+1)">▶</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[['planning','תכנון הנדסי'],['production','ייצור'],['procurement','רכש'],['milestones','אבני דרך']].map(([k,l])=>`<button class="btn sm${S.gt===k?' act':''}" onclick="V('gt','${k}')">${l}</button>`).join('')}
+      </div>
+      ${S.gt==='milestones'?`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:16px;color:var(--t3)">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#3b82f6;border-radius:1px"></div>סיום תכנון</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#f59e0b;border-radius:1px"></div>סיום ייצור</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#10b981;border-radius:1px"></div>התקנה</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#a78bfa;border-radius:1px"></div>רכש</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#ef4444;border-radius:1px"></div>חריגה / אחרי התקנה</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;border:2px solid #0f1e35"></div>בפועל</div>
+      </div>`:''}
+    </div>
+    <div class="card" style="overflow:hidden;width:100%;max-width:none">
+      <div class="ghdr"><div class="glc">פרויקט · מתכנן</div><div class="gtc">${ticks}${tiv?`<div class="tline" style="left:${tp}%"></div>`:''}</div><div class="gdc">תאריכים</div></div>
+      ${rows||`<div style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📅</div><div style="color:var(--t3);font-size:29px">אין פרויקטים להצגה</div></div>`}
+      <div class="gftr">${[['פרויקטים',fil.length,'#94a3b8'],['פעילים',fil.filter(p=>p.status!=='הושלם').length,'#3b82f6'],['חריגות',fil.filter(p=>barSt(p,'planning')==='overdue').length,'#dc2626'],['הושלמו',fil.filter(p=>p.status==='הושלם').length,'#16a34a']].map(([l,v,c])=>`<div style="display:flex;align-items:center;gap:5px;font-size:16px"><span style="color:#475569;font-size:11px">${l}:</span><span style="font-weight:700;color:${c};font-family:'IBM Plex Mono',monospace;font-size:12px">${v}</span></div>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+// ── MILESTONES ────────────────────────────────────────────────
+function renderMilestones(){
+  const act=S.projects.filter(p=>p.status!=='הושלם'&&p.approved);
+
+  // helper: diff from planned in days, positive=late, negative=early
+  const dayDiff=(planned,actual)=>{
+    const p=toD(planned),a=toD(actual||TODAY);
+    if(!p)return null;
+    return diffD(planned,actual||TODAY);
+  };
+  // cell helper: planned date + actual date + diff badge
+  const msCell=(planned,actual,isBottleneck)=>{
+    if(!planned)return`<td style="color:var(--t3)">—</td>`;
+    const planDt=toD(planned);
+    const actDt=toD(actual);
+    const diff=actual?diffD(planned,actual):(!actDt&&planDt<TODAY?diffD(planned,TODAY):null);
+    const overdue=!actual&&planDt&&planDt<TODAY;
+    let diffHtml='';
+    if(diff!==null){
+      const col=diff>0?'#fca5a5':diff<0?'#86efac':'#94a3b8';
+      const lbl=diff>0?'+'+diff+'י':diff<0?diff+'י':'±0';
+      diffHtml=`<span class="diff-chip ${diff>0?'diff-pos':diff<0?'diff-neg':'diff-zero'}">${lbl}</span>`;
+    }
+    return`<td style="min-width:120px">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:${overdue?'#fca5a5':isBottleneck?'#fcd34d':'var(--t2)'}">${fmtD(planned)}</span>
+          ${diffHtml}
+          ${isBottleneck?`<span class="bdg bam" style="font-size:10px">רכש</span>`:''}
+        </div>
+        ${actual
+          ?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:26px;color:var(--t3)">בפועל:</span><span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#86efac">${fmtD(actual)}</span></div>`
+          :overdue?`<div style="font-size:26px;color:#fca5a5">⚠ חרג</div>`:''}
+      </div>
+    </td>`;
+  };
+
+  return`<div class="main">
+    <div class="page-hdr"><div class="page-title">ריכוז אבני דרך</div></div>
+    <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;font-size:16px;color:var(--t3)">
+      <div style="display:flex;align-items:center;gap:4px"><span style="color:#fca5a5;font-weight:600">+Xי</span> = חריגה</div>
+      <div style="display:flex;align-items:center;gap:4px"><span style="color:#86efac;font-weight:600">-Xי</span> = מקדים</div>
+      <div style="display:flex;align-items:center;gap:4px"><span class="bdg bam" style="font-size:10px">רכש</span> = אביזר עם אספקה מאוחרת ביותר ביותר</div>
+    </div>
+    <div class="card" style="overflow-x:auto"><table style="min-width:900px"><thead><tr>
+      <th>לקוח</th><th>הזמנה</th><th>סטטוס</th>
+      <th>סיום תכנון</th><th>תחילת ייצור</th><th>סיום ייצור</th>
+      <th>רכש</th><th>התקנה</th>
+    </tr></thead>
+    <tbody>${act.length?act.map(p=>{
+      const ov=barSt(p,'planning')==='overdue'||barSt(p,'production')==='overdue';
+      // find bottleneck: latest expected procurement item not yet arrived
+      const procs=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived&&i.expected);
+      const bottleneck=procs.reduce((max,i)=>(!max||toD(i.expected)>toD(max.expected))?i:max,null);
+      const bnDt=bottleneck?toD(bottleneck.expected):null;
+      const bnAfterInstall=bnDt&&p.installDate&&bnDt>toD(p.installDate);
+      return`<tr class="row" style="background:${ov?'#7f1d1d11':''}" onclick="openPD('${pid(p)}')">
+        <td style="font-weight:500;white-space:nowrap">${p.client}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;color:var(--t3);white-space:nowrap">${p.orderNum}</td>
+        <td>${sbdgP(p)}</td>
+        ${msCell(p.planEnd,p.actualPlanEnd,false)}
+        ${msCell(p.prodStart,p.status!=='תכנון'?p.prodStart:null,false)}
+        ${msCell(p.prodEnd,p.actualProdEnd,false)}
+        <td style="min-width:130px">
+          ${bottleneck?`<div style="display:flex;flex-direction:column;gap:3px">
+            <div style="font-size:16px;font-weight:500;color:${bnAfterInstall?'#fca5a5':'var(--t2)'}">${bottleneck.name}</div>
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:${bnAfterInstall?'#fca5a5':'var(--t3)'}">${fmtD(bottleneck.expected)}</span>
+              ${bnAfterInstall?`<span class="bdg br" style="font-size:26px">⚠ אחרי התקנה</span>`:''}
+            </div>
+          </div>`:`<span style="color:var(--t3);font-size:16px">—</span>`}
+        </td>
+        ${msCell(p.installDate,p.status==='הושלם'?p.installDate:null,false)}
+      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">🎯</div><div style="color:var(--t3);font-size:29px">אין פרויקטים פעילים</div></td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+// ── APPROVAL ──────────────────────────────────────────────────
+function renderApproval(){
+  const pend=S.projects.filter(p=>!p.approved&&!p.rejected);
+  const canEdit=['admin','tapi'].includes(cu()?.roleId);
+  const editingId=S.md._approvalEdit||null;
+
+  return`<div class="main">
+    <div class="page-hdr">
+      <div class="page-title">אישור ותזמון פרויקטים</div>
+      ${canEdit?`<div style="font-size:16px;color:var(--t3)">כמנהל מערכת / תפ"י ניתן לערוך תאריכים ומשכי זמן לפני אישור</div>`:''}
+    </div>
+    ${!pend.length?`<div class="alert aok">✓ אין פרויקטים הממתינים לאישור</div>`:''}
+    ${pend.map(p=>{
+      const ag=getUser(p.agentId),eng=getUser(p.engineerId);
+      const isEditing=editingId===pid(p);
+
+      if(isEditing&&canEdit){
+        // ── EDIT MODE ──
+        const ef=S.md._editForm||{};
+        const ps=ef.planStart?new Date(ef.planStart):toD(p.planStart);
+        const ph=parseInt(ef.planHours||p.planHours||30);
+        const prh=parseInt(ef.prodHours||p.prodHours||80);
+        const pe=ps?bizEnd(ps,ph):null;
+        const prS=pe?addD(nextBiz(pe),1):null;
+        const prE=prS?bizEnd(prS,prh):null;
+        const ins=prE?addD(nextBiz(prE),1):null;
+        return`<div class="card" style="margin-bottom:12px;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-weight:600;font-size:16px">${p.client} — ${p.projectName}</div>
+              <div style="font-size:16px;color:var(--t3)">${p.orderNum} · ${ag?.name||'—'} · ${eng?.name||'—'}</div>
+            </div>
+            <button class="btn sm" onclick="S.md._approvalEdit=null;S.md._editForm={};render()">✕ סגור עריכה</button>
+          </div>
+          <div class="g3" style="margin-bottom:14px">
+            <div class="fld"><label class="fl">תחילת תכנון</label>
+              <input type="date" class="fi" value="${toISO(ef.planStart||p.planStart)}"
+                onchange="S.md._editForm=S.md._editForm||{};S.md._editForm.planStart=this.value?new Date(this.value).toISOString():null;render()">
+            </div>
+            <div class="fld"><label class="fl">שעות תכנון</label>
+              <input type="number" min="1" class="fi" id="apEd_planHours" value="${ph}"
+                onblur="S.md._editForm=S.md._editForm||{};S.md._editForm.planHours=parseInt(this.value)||${ph};render()">
+            </div>
+            <div class="fld"><label class="fl">שעות ייצור</label>
+              <input type="number" min="1" class="fi" id="apEd_prodHours" value="${prh}"
+                onblur="S.md._editForm=S.md._editForm||{};S.md._editForm.prodHours=parseInt(this.value)||${prh};render()">
+            </div>
+          </div>
+          ${ps?`<div style="background:#0f172a;border-radius:8px;padding:14px;margin-bottom:14px">
+            <div style="font-size:16px;font-weight:600;color:var(--t3);margin-bottom:10px">לוח זמנים מחושב מחדש</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+              ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`
+                <div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33">
+                  <div style="font-size:29px;color:var(--t3);margin-bottom:3px">${l}</div>
+                  <div style="font-weight:600;color:${c};font-size:28px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div>
+                </div>`).join('')}
+            </div>
+          </div>`:''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn pri sm" onclick="doApprovalSaveEdit('${pid(p)}')">💾 שמור שינויים</button>
+            <button class="btn pri" onclick="doApprovalSaveAndApprove('${pid(p)}')">✓ שמור ואשר</button>
+            <button class="btn dan" onclick="openRM('${pid(p)}')">✕ דחה</button>
+          </div>
+        </div>`;
+      }
+
+      // ── VIEW MODE ──
+      return`<div class="arow">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:500">${p.client} — ${p.projectName}</div>
+          <div style="font-size:16px;color:var(--t3)">${p.orderNum} · ${ag?.name||'—'} · ${eng?.name||'—'}</div>
+          <div style="font-size:16px;color:var(--t3);margin-top:2px;display:flex;gap:10px;flex-wrap:wrap">
+            <span>תכנון: <span style="font-family:'IBM Plex Mono',monospace">${fmtD(p.planStart)} → ${fmtD(p.planEnd)}</span></span>
+            <span>ייצור: <span style="font-family:'IBM Plex Mono',monospace">${fmtD(p.prodStart)} → ${fmtD(p.prodEnd)}</span></span>
+            <span>התקנה: <span style="font-family:'IBM Plex Mono',monospace;color:#10b981">${fmtD(p.installDate)}</span></span>
+          </div>
+          <div style="font-size:16px;color:var(--t3);margin-top:2px">
+            שעות תכנון: <strong>${p.planHours||'—'}</strong> · שעות ייצור: <strong>${p.prodHours||'—'}</strong>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button class="btn sm" onclick="openPD('${pid(p)}')">👁 צפה</button>
+          ${canEdit?`<button class="btn sm" onclick="S.md._approvalEdit='${pid(p)}';S.md._editForm={};render()">✏ ערוך</button>`:''}
+          <button class="btn sm pri" onclick="doApprove('${pid(p)}')">✓ אשר</button>
+          <button class="btn sm dan" onclick="openRM('${pid(p)}')">✕ דחה</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────
+function renderAdmin(){
+  if(!S.adminOK)return`<div class="main"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:480px;gap:14px;text-align:center">
+    <div style="width:60px;height:60px;border-radius:12px;background:#3b0764;display:flex;align-items:center;justify-content:center;font-size:30px">🔒</div>
+    <div style="font-size:16px;font-weight:500">גישת מנהל מערכת</div>
+    ${S.pinErr?`<div class="alert ae" style="max-width:260px">קוד שגוי</div>`:''}
+    <div style="display:flex;gap:10px">${[0,1,2,3].map(i=>`<input class="pin" type="password" maxlength="1" id="pin${i}" value="${S.pin[i]||''}" oninput="hPin(${i},this.value)" onkeydown="hPinK(event,${i})">`).join('')}</div>
+    
+  </div></div>`;
+
+  const tabs=[{k:'users',l:'משתמשים'},{k:'notifications',l:'התראות'},{k:'procItems',l:'אביזרי רכש'},{k:'auditlog',l:'לוג פעולות'}];
+  let tc='';
+  if(S.at==='users'){
+    tc=`<div style="display:flex;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:28px;color:var(--t3)">${S.users.length} משתמשים</div>
+      <button class="btn pri sm" onclick="openAU()">+ משתמש</button></div>
+    <table><thead><tr><th>שם</th><th>תפקיד</th><th>אימייל</th><th>נייד</th><th>סוכן</th><th>סטטוס</th><th></th></tr></thead>
+    <tbody>${S.users.map(u=>`<tr>
+      <td>${av(u,28)} <span style="font-weight:500;margin-right:6px">${u.name}</span></td>
+      <td>${bdg('by',getRole(u.roleId).name)}</td>
+      <td style="color:var(--t3)">${u.email||'—'}</td>
+      <td style="color:var(--t3)">${u.phone||'—'}</td>
+      <td>${u.isAgent?bdg('bb','✓'):''}</td>
+      <td>${u.active!==false?bdg('bg','פעיל'):bdg('by','לא פעיל')}</td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn xs" onclick="openEU('${u.id}')">✏</button>
+        <button class="btn xs" style="color:#fca5a5" onclick="doDelUser('${u.id}')">🗑</button>
+      </div></td>
+    </tr>`).join('')}</tbody></table>`;
+  }else if(S.at==='notifications'){
+    const keys=Object.keys(NKEYS);
+    tc=`<div style="overflow-x:auto"><table style="min-width:600px">
+      <thead><tr><th>משתמש</th>${keys.map(k=>`<th style="text-align:center;font-size:29px;white-space:normal;max-width:80px">${NKEYS[k]}</th>`).join('')}</tr></thead>
+      <tbody>${S.users.map(u=>`<tr><td>${av(u,22)} ${u.name}</td>
+        ${keys.map(k=>`<td style="text-align:center"><label class="tog"><input type="checkbox" ${(u.notif||{})[k]?'checked':''} onchange="doTogNotif('${u.id}','${k}',this.checked)"><span class="tog-sl"></span></label></td>`).join('')}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }else if(S.at==='procItems'){
+    tc=`<div style="display:flex;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:28px;color:var(--t3)">רשימת האביזרים הזמינה</div>
+      <button class="btn pri sm" onclick="doAddPM()">+ אביזר</button></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      ${S.pmaster.map((item,i)=>`<div style="display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid var(--b);border-radius:6px;padding:5px 10px;font-size:28px">${item}<button onclick="doRmPM(${i})" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:28px;line-height:1">×</button></div>`).join('')}
+    </div>`;
+  }else{
+    // AUDIT LOG TAB
+    const logs=S.auditLogs||[];
+    const allUsers=[...new Set(logs.map(l=>l.userName).filter(Boolean))];
+    const filtered=S.logFilter==='all'?logs:logs.filter(l=>l.userId===S.logFilter||l.userName===S.logFilter);
+    tc=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:28px;color:var(--t3)">${filtered.length} פעולות</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fi" style="width:auto;padding:4px 8px;font-size:16px" onchange="V('logFilter',this.value)">
+          <option value="all">כל המשתמשים</option>
+          ${S.users.map(u=>`<option value="${u.id}"${S.logFilter===u.id?' selected':''}>${u.name}</option>`).join('')}
+        </select>
+        <button class="btn sm" onclick="loadAuditLogs().then(render)">🔄 רענן</button>
+      </div>
+    </div>
+    ${filtered.length?filtered.slice(0,50).map(l=>{
+      const icon=LOG_ICONS[l.type]||'📌',label=LOG_LABELS[l.type]||l.type;
+      const u=S.users.find(x=>x.id===l.userId);
+      const rc=getRole(u?.roleId).color;
+      return`<div class="log-row">
+        <div class="log-icon" style="background:${rc}18;color:${rc};border:1px solid ${rc}30">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+            <div style="min-width:0">
+              <span style="font-weight:600;color:var(--t)">${l.userName||'—'}</span>
+              <span class="bdg by" style="font-size:26px;margin-right:5px;margin-left:4px">${getRole(u?.roleId).name}</span>
+              <span style="color:var(--t2)"> — ${label}</span>
+              ${l.detail?`<div style="font-size:16px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.detail}</div>`:''}
+            </div>
+            <div style="font-size:29px;color:var(--t4);white-space:nowrap;font-family:'IBM Plex Mono',monospace;flex-shrink:0">${fmtTS(l.ts)}</div>
+          </div>
+        </div>
+      </div>`;}).join(''):`<div style="text-align:center;color:#475569;padding:32px">אין פעולות להצגה</div>`}`;
+  }
+  return`<div class="main">
+    <div class="page-hdr"><div class="page-title">🔒 ניהול מערכת</div><button class="btn sm" onclick="S.adminOK=false;render()">נעל</button></div>
+    <div class="card">
+      <div class="tabs">${tabs.map(t=>`<button class="tab${S.at===t.k?' act':''}" onclick="switchAdminTab('${t.k}')">${t.l}</button>`).join('')}</div>
+      <div style="padding:16px">${tc}</div>
+    </div>
+  </div>`;
+}
+
+// ── PROJECT DETAIL MODAL ──────────────────────────────────────
+function renderPD(){
+  const p=S.projects.find(x=>pid(x)===S.md.pid);if(!p)return'';
+  const eng=getUser(p.engineerId),ag=getUser(p.agentId);
+  const tabs=[{k:'schedule',l:'לוח זמנים'},{k:'procurement',l:`רכש (${(p.procurement||[]).length})`},{k:'notes',l:`הערות (${(p.notes||[]).length})`}];
+  const ms=[
+    {l:'תחילת תכנון',d:p.planStart,ok:true},
+    {l:'סיום תכנון',d:p.planEnd,ok:!!p.actualPlanEnd,ov:!p.actualPlanEnd&&p.planEnd&&toD(p.planEnd)<TODAY},
+    {l:'תחילת ייצור',d:p.prodStart,ok:p.status!=='תכנון'},
+    {l:'סיום ייצור',d:p.prodEnd,ok:!!p.actualProdEnd,ov:!p.actualProdEnd&&p.prodEnd&&toD(p.prodEnd)<TODAY&&p.status!=='תכנון'},
+    {l:'התקנה',d:p.installDate,ok:p.status==='הושלם'},
+  ];
+  let tc='';
+  if(S.mt==='schedule'){
+    const cf=p.planStart&&p.planEnd&&hasCf(p,toD(p.planStart),toD(p.planEnd),'planning');
+    const planDiff=p.planStart&&p.actualPlanEnd?diffD(p.planStart,p.actualPlanEnd)-(p.planStart&&p.planEnd?diffD(p.planStart,p.planEnd):0):null;
+    const prodDiff=p.prodStart&&p.actualProdEnd?diffD(p.prodStart,p.actualProdEnd)-(p.prodStart&&p.prodEnd?diffD(p.prodStart,p.prodEnd):0):null;
+    const planNotDoneButProdStarted=!p.actualPlanEnd&&p.prodStart&&toD(p.prodStart)<=TODAY;
+    const installBeforeProdEnd=p.installDate&&p.prodEnd&&toD(p.installDate)<toD(p.prodEnd);
+    const installBeforeProdActual=p.installDate&&p.actualProdEnd&&toD(p.installDate)<toD(p.actualProdEnd);
+    const installConflict=installBeforeProdEnd||installBeforeProdActual;
+    const planConfirm=S.md._planConfirm||false;
+    const prodConfirm=S.md._prodConfirm||false;
+    const planStartConfirm=S.md._planStartConfirm||false;
+    const prodStartConfirm=S.md._prodStartConfirm||false;
+    const installConfirm=S.md._installConfirm||false;
+    const canMarkPlan=['admin','eng','tapi'].includes(cu()?.roleId);
+    const canMarkProd=['admin','prod','tapi'].includes(cu()?.roleId);
+    const diffChip=d=>d===null?'':d===0?'<span class="diff-chip diff-zero">± 0</span>':d>0?`<span class="diff-chip diff-pos">↑ +${d} ימים</span>`:`<span class="diff-chip diff-neg">↓ ${d} ימים</span>`;
+    tc=`
+    ${planNotDoneButProdStarted?`<div class="alert ae">⚠️ תכנון טרם הושלם אך תאריך תחילת הייצור הגיע</div>`:''}
+    ${p.status==='ממתין לייצור'&&p.prodStart&&toD(p.prodStart)<=TODAY?`<div class="alert aw" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <span>⚡ תאריך תחילת הייצור עבר — האם הייצור התחיל?</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn xs suc" onclick="doProdStartToday('${pid(p)}')">✓ כן, עדכן לייצור</button>
+      </div>
+    </div>`:''}
+    ${installConflict?`<div class="alert ae">⚠️ תאריך התקנה מוקדם מסיום הייצור — נא לתקן</div>`:''}
+
+    <div class="sec">צוות</div>
+    <div class="g3">
+      <div class="fld"><label class="fl">סוכן אחראי</label><select class="fi" onchange="upProj('${pid(p)}',{agentId:this.value})">${agents().map(u=>`<option value="${u.id}"${p.agentId===u.id?' selected':''}>${u.name}</option>`).join('')}</select></div>
+      <div class="fld"><label class="fl">מתכנן</label><select class="fi" onchange="upProj('${pid(p)}',{engineerId:this.value})">${engs().map(u=>`<option value="${u.id}"${p.engineerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select></div>
+      <div class="fld"><label class="fl">מנהל ייצור</label><select class="fi" onchange="upProj('${pid(p)}',{prodManagerId:this.value})">${prods().map(u=>`<option value="${u.id}"${p.prodManagerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select></div>
+    </div>
+
+    <div class="sec">תכנון הנדסי ${cf?'<span class="cfbdg">⚠ חפיפה</span>':''}</div>
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fld"><label class="fl">תחילה מתוכננת</label>
+        <input type="date" class="fi" value="${toISO(p.planStart)}" onchange="doUpDate('${pid(p)}','planStart',this.value)">
+      </div>
+      <div class="fld"><label class="fl" style="color:${p.actualPlanStart?'#16a34a':''}">תחילה בפועל ${p.actualPlanStart?'✓':''}</label>
+        <input type="date" class="fi" value="${toISO(p.actualPlanStart)}"
+          style="border-color:${p.actualPlanStart?'rgba(22,163,74,.5)':''}"
+          onchange="doUpDate('${pid(p)}','actualPlanStart',this.value)">
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="fl">סיום מתוכנן</label>
+        <input type="date" class="fi" value="${toISO(p.planEnd)}" onchange="doUpDate('${pid(p)}','planEnd',this.value)">
+      </div>
+      <div class="fld"><label class="fl">סיום בפועל</label>
+        <input type="date" class="fi" value="${toISO(p.actualPlanEnd)}" onchange="doUpDate('${pid(p)}','actualPlanEnd',this.value)">
+        ${planDiff!==null?`<div style="margin-top:4px">${diffChip(planDiff)}</div>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${canMarkPlan&&!p.actualPlanStart?(!planStartConfirm
+        ?`<button class="btn sec sm" onclick="S.md._planStartConfirm=true;render()">▶ עדכן תחילת תכנון</button>`
+        :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר תחילת תכנון היום?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planStartConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doPlanStartToday('${pid(p)}')">✓ אשר</button></div></div>`)
+        :''}
+      ${canMarkPlan&&!p.actualPlanEnd?(!planConfirm
+        ?`<button class="btn pri sm" onclick="S.md._planConfirm=true;render()">✓ סמן סיום תכנון</button>`
+        :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>האם לאשר סיום תכנון הנדסי?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doMarkPlanDone('${pid(p)}')">✓ אשר</button></div></div>`)
+        :''}
+    </div>
+
+    <div class="sec">ייצור</div>
+    <div class="g2" style="margin-bottom:8px">
+      <div class="fld">
+        <label class="fl" style="color:${planNotDoneButProdStarted?'#dc2626':''}">תחילה מתוכננת ${planNotDoneButProdStarted?'⚠':''}</label>
+        <input type="date" class="fi" value="${toISO(p.prodStart)}"
+          style="border-color:${planNotDoneButProdStarted?'var(--red)':''}"
+          onchange="doUpDate('${pid(p)}','prodStart',this.value)">
+      </div>
+      <div class="fld">
+        <label class="fl" style="color:${p.actualProdStart?'#16a34a':''}">תחילה בפועל ${p.actualProdStart?'✓':''}</label>
+        <input type="date" class="fi" value="${toISO(p.actualProdStart)}"
+          style="border-color:${p.actualProdStart?'rgba(22,163,74,.5)':''}"
+          onchange="doUpDate('${pid(p)}','actualProdStart',this.value)">
+      </div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="fl">סיום מתוכנן</label>
+        <input type="date" class="fi" value="${toISO(p.prodEnd)}" onchange="doUpDate('${pid(p)}','prodEnd',this.value)">
+      </div>
+      <div class="fld">
+        <label class="fl">סיום בפועל</label>
+        <input type="date" class="fi" value="${toISO(p.actualProdEnd)}" onchange="doUpDate('${pid(p)}','actualProdEnd',this.value)">
+        ${prodDiff!==null?`<div style="margin-top:4px">${diffChip(prodDiff)}</div>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${canMarkProd&&!p.actualProdStart?(!prodStartConfirm
+        ?`<button class="btn sec sm" onclick="S.md._prodStartConfirm=true;render()">▶ עדכן תחילת ייצור</button>`
+        :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר תחילת ייצור היום?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodStartConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doProdStartToday('${pid(p)}')">✓ אשר</button></div></div>`)
+        :''}
+      ${canMarkProd&&!p.actualProdEnd?(!prodConfirm
+        ?`<button class="btn pri sm" onclick="S.md._prodConfirm=true;render()">✓ סמן סיום ייצור</button>`
+        :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>האם לאשר סיום ייצור?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doMarkProdDone('${pid(p)}')">✓ אשר</button></div></div>`)
+        :''}
+    </div>
+
+    <div class="sec">התקנה</div>
+    <div class="g3">
+      <div class="fld">
+        <label class="fl" style="color:${installConflict?'#f87171':p.actualInstallDate?'#4ade80':''}">מועד מתוכנן ${installConflict?'⚠':''}</label>
+        <input type="date" class="fi" value="${toISO(p.installDate)}" style="border-color:${installConflict?'var(--red)':''}" onchange="doUpDate('${pid(p)}','installDate',this.value)">
+      </div>
+      <div class="fld">
+        <label class="fl">בוצע בפועל</label>
+        <input type="date" class="fi" value="${toISO(p.actualInstallDate)}" onchange="doUpDate('${pid(p)}','actualInstallDate',this.value)">
+        ${p.actualInstallDate?`<div style="font-size:29px;color:#4ade80;margin-top:3px">✓ התקנה בוצעה</div>`:''}
+      </div>
+    </div>
+    ${!p.actualInstallDate?(!installConfirm
+      ?`<div style="margin-bottom:14px"><button class="btn pri sm" onclick="S.md._installConfirm=true;render()">🔧 סמן ביצוע התקנה</button></div>`
+      :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;width:100%"><span>לאשר שההתקנה בוצעה היום?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._installConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doMarkInstallDone('${pid(p)}')">✓ אשר</button></div></div>`)
+      :`<div class="alert aok" style="margin-bottom:14px">✓ התקנה בוצעה ב־${fmtD(p.actualInstallDate)}</div>`}
+
+    <div class="sec">רכש — סיכום אביזרים</div>
+    ${buildProcSummary(p,S.md)}
+
+    <div class="sec">סטטוס</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <select class="fi" style="max-width:220px" onchange="doUpStatus('${pid(p)}',this.value)">${STATS.map(s=>`<option${computeAutoStatus(p)===s?' selected':''}>${s}</option>`).join('')}</select>
+      ${(()=>{
+        const effStatus=computeAutoStatus(p);const wd=waitingDays(p);
+        if(wd===null||wd<=0)return'';
+        const isWaiting=effStatus?.startsWith('ממתין');
+        return isWaiting
+          ?`<div style="display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--r8);padding:8px 14px">
+              <span style="font-size:29px">⏳</span>
+              <div><div style="font-size:28px;color:#fbbf24;font-weight:600">ממתין ${wd} ימים</div>
+              <div style="font-size:29px;color:var(--t3)">${effStatus}</div></div>
+            </div>`
+          :'';
+      })()}
+    </div>`;
+  }else if(S.mt==='procurement'){
+    tc=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="sec" style="margin:0">אביזרי רכש</div>
+      <button class="btn sm pri" onclick="doAddPI('${pid(p)}')">+ הוסף אביזר</button></div>
+    ${!(p.procurement||[]).length?`<div style="text-align:center;padding:32px 20px;color:var(--t3)"><div style="font-size:30px;margin-bottom:8px;opacity:.4">📦</div><div>אין אביזרים — לחץ "+ הוסף אביזר"</div></div>`:''}
+    ${(p.procurement||[]).map((item,idx)=>{
+      const ds=item.cancelled?'can':item.arrived?'arr':item.expected&&toD(item.expected)<TODAY?'late':'pend';
+      const dc={arr:'rgba(34,197,94,.15)',late:'rgba(239,68,68,.12)',pend:'rgba(245,158,11,.1)',can:'rgba(100,116,139,.1)'};
+      const bc={arr:'rgba(34,197,94,.3)',late:'rgba(239,68,68,.25)',pend:'rgba(245,158,11,.25)',can:'rgba(100,116,139,.2)'};
+      const isArrConfirm=S.md['_arrConf_'+item.id]||false;
+      return`<div class="pcard" style="background:${dc[ds]};border-color:${bc[ds]};opacity:${item.cancelled?.55:1}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700;font-size:29px">${item.name||'—'}</span>
+            ${item.arrived?bdg('bg','✓ הגיע '+fmtS(item.arrivedDate)):item.cancelled?bdg('by','בוטל'):ds==='late'?bdg('br','⚠ באיחור'):bdg('bam','ממתין')}
+          </div>
+          ${!item.cancelled&&!item.arrived?`<div style="display:flex;gap:6px">
+            ${!isArrConfirm
+              ?`<button class="btn suc sm" onclick="S.md['_arrConf_${item.id}']=true;render()">✓ הגיע</button>`
+              :`<div style="display:flex;align-items:center;gap:6px"><span style="font-size:16px;color:#fbbf24">לאשר הגעה?</span><button class="btn xs dan" onclick="S.md['_arrConf_${item.id}']=false;render()">לא</button><button class="btn xs suc" onclick="doMarkArr('${pid(p)}','${item.id}')">✓ כן</button></div>`}
+            <button class="btn xs" style="color:#f87171" onclick="doCncPC('${pid(p)}','${item.id}')">בטל</button>
+          </div>`:''}
+        </div>
+        <div class="g3">
+          <div class="fld"><label class="fl">שם אביזר</label>
+            <select class="fi" onchange="doUpPC('${pid(p)}','${item.id}','name',this.value)">
+              ${S.pmaster.map(n=>`<option${item.name===n?' selected':''}>${n}</option>`).join('')}
+            </select></div>
+          <div class="fld"><label class="fl">תאריך הזמנה</label>
+            <input type="date" class="fi" value="${toISO(item.ordered)}"
+              onchange="doUpPD('${pid(p)}','${item.id}','ordered',this.value)">
+            ${!item.ordered&&!item.arrived?`<div class="emsg">⚠ טרם הוזמן — עדכן תאריך הזמנה</div>`:''}
+          </div>
+          <div class="fld"><label class="fl">אספקה צפויה</label>
+            <input type="date" class="fi" value="${toISO(item.expected)}"
+              onchange="doUpPD('${pid(p)}','${item.id}','expected',this.value)">
+            ${!item.expected&&!item.arrived?`<div class="emsg">⚠ חסר תאריך אספקה</div>`:''}
+          </div>
+        </div>
+        ${item.arrived?`<div class="fld"><label class="fl">תאריך הגעה בפועל</label><input type="date" class="fi" value="${toISO(item.arrivedDate)}" onchange="doUpPD('${pid(p)}','${item.id}','arrivedDate',this.value)"></div>`:''}
+      </div>`;}).join('')}`;
+  }else{
+    tc=`<div class="sec">לוג הערות</div>
+    ${(p.notes||[]).slice().reverse().map(n=>`<div class="note"><div class="note-meta"><span class="note-user">${n.user}</span><span class="note-date">${fmtD(n.date)}</span></div><div class="note-text">${n.text}</div></div>`).join('')}
+    <div style="display:flex;gap:7px;margin-top:12px">
+      <input class="fi" id="ni" style="flex:1" placeholder="הוסף הערה..." value="${S.nn||''}" oninput="S.nn=this.value" onkeydown="if(event.key==='Enter')doAddNote('${pid(p)}')">
+      <button class="btn pri sm" onclick="doAddNote('${pid(p)}')">הוסף</button>
+    </div>`;
+  }
+  return`<div class="mbg">
+    <div class="modal wide">
+      <div class="mhd">
+        <div><div class="mttl">${p.client} — ${p.projectName}</div><div style="font-size:16px;color:var(--t3)">${p.orderNum} · ${eng?.name||'—'} · ${ag?.name||'—'}</div></div>
+        <div style="display:flex;align-items:center;gap:8px">${sbdg(p)}<button class="btn sm" onclick="closeM()">✕</button></div>
+      </div>
+      <div style="padding:12px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:2px;overflow-x:auto;flex-shrink:0">
+        ${ms.map((m,i,arr)=>`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:24px;height:24px;border-radius:50%;background:${m.ok?'#16a34a':m.ov?'#dc2626':'#1e293b'};display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid ${m.ok?'#15803d':m.ov?'#b91c1c':'var(--b)'};color:${m.ok||m.ov?'#fff':'#64748b'}">${m.ok?'✓':m.ov?'!':'○'}</div>
+          <div style="font-size:26px;color:var(--t3);text-align:center;max-width:50px;line-height:1.2">${m.l}</div>
+          <div style="font-size:26px;color:${m.ov?'#fca5a5':'#64748b'};font-family:'IBM Plex Mono',monospace">${fmtS(m.d)}</div>
+        </div>${i<arr.length-1?`<div style="width:20px;height:2px;background:var(--b);margin:0 2px;margin-bottom:22px"></div>`:''}</div>`).join('')}
+      </div>
+      <div class="tabs">${tabs.map(t=>`<button class="tab${S.mt===t.k?' act':''}" onclick="V('mt','${t.k}')">${t.l}</button>`).join('')}</div>
+      <div class="mbdy">${tc}</div>
+      <div class="mft" style="justify-content:space-between">
+        <button class="btn dan sm" onclick="openCancelProj('${pid(p)}')" style="opacity:.7">
+          🗑 ביטול פרויקט
+        </button>
+        <button class="btn" onclick="closeM()">סגור</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── NEW PROJECT MODAL ─────────────────────────────────────────
+function renderNP(){
+  const f=S.nf,e=S.ferr,step=S.fs;
+  const fi=(id,x='')=>`id="${id}" class="fi${e[id]?' err':''}" ${x}`;
+  const err=id=>e[id]?`<div class="emsg">שדה חובה</div>`:'';
+  const steps=['פרטי פרויקט','לוח זמנים','רכש'];
+  let con='';
+  if(step===1){
+    con=`${f._parsed?`<div class="alert aok" style="margin-bottom:12px">✓ נקרא: <strong>${f._parsed}</strong></div>`:''}
+    <div class="upz" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event);this.classList.remove('drag')" onclick="document.getElementById('exi').click()">
+      <div style="font-size:30px;margin-bottom:8px">📂</div>
+      <div style="font-size:29px;color:var(--t2)">גרור קובץ Excel תמחור לכאן</div>
+      <div style="font-size:16px;color:var(--t3);margin-top:4px">או לחץ לבחירת קובץ</div>
+      <input type="file" id="exi" accept=".xlsx,.xls" style="display:none" onchange="hFU(this)">
+    </div>
+    <div style="text-align:center;color:var(--t3);font-size:16px;margin:10px 0">— או מלא ידנית —</div>
+    <div class="g2">
+      <div class="fld"><label class="fl">מס' הזמנה *</label><input ${fi('orderNum')} value="${f.orderNum||''}">${err('orderNum')}</div>
+      <div class="fld"><label class="fl">שם לקוח *</label><input ${fi('client')} value="${f.client||''}">${err('client')}</div>
+      <div class="fld"><label class="fl">שם פרויקט *</label><input ${fi('projectName')} value="${f.projectName||''}">${err('projectName')}</div>
+      <div class="fld"><label class="fl">סוג פרויקט *</label>
+        <select ${fi('projectType')}><option value="">בחר...</option>
+          ${['שואב אבק','מסנן','צנרת','מפוח','ציקלון','אחר'].map(t=>`<option${f.projectType===t?' selected':''}>${t}</option>`).join('')}
+        </select>${err('projectType')}</div>
+      <div class="fld"><label class="fl">סוכן אחראי *</label>
+        <select ${fi('agentId')}><option value="">בחר...</option>${agents().map(u=>`<option value="${u.id}"${f.agentId===u.id?' selected':''}>${u.name}</option>`).join('')}</select>${err('agentId')}</div>
+      <div class="fld"><label class="fl">מתכנן *</label>
+        <select ${fi('engineerId')} onchange="hEngChange(this.value)"><option value="">בחר...</option>${engs().map(u=>`<option value="${u.id}"${f.engineerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select>${err('engineerId')}</div>
+      <div class="fld"><label class="fl">מנהל ייצור *</label>
+        <select ${fi('prodManagerId')}><option value="">בחר...</option>${prods().map(u=>`<option value="${u.id}"${f.prodManagerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select>${err('prodManagerId')}</div>
+      <div class="fld"><label class="fl">שעות תכנון * ${f.planHours&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('planHours')} value="${f.planHours||''}">${err('planHours')}</div>
+      <div class="fld"><label class="fl">שעות ייצור * ${f.prodHours&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('prodHours')} value="${f.prodHours||''}">${err('prodHours')}</div>
+      <div class="fld"><label class="fl">ימי התקנה ${f.installDays&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div style="flex:1"><input type="number" min="1" class="fi" id="installDays" value="${f.installDays||''}" placeholder="ימי עבודה"></div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label class="fl">עובדים/יום</label>
+            <input type="number" min="1" max="10" class="fi" id="installWorkersPerDay" value="${f.installWorkersPerDay||2}" style="width:70px" onchange="recalcInstallDays(this.value)">
+          </div>
+        </div>
+        ${f._installWorkerDays?`<div style="font-size:29px;color:var(--t3);margin-top:3px">סה"כ ימי-עובד מהקובץ: ${f._installWorkerDays} ÷ ${f.installWorkersPerDay||2} עובדים = ${f.installDays} ימים</div>`:''}
+      </div>
+    </div>`;
+  }else if(step===2){
+    const ps=f.planStart?new Date(f.planStart):null;
+    const pe=ps&&f.planHours?bizEnd(ps,f.planHours):null,prS=pe?addD(nextBiz(pe),1):null,prE=prS&&f.prodHours?bizEnd(prS,f.prodHours):null,ins=prE?addD(nextBiz(prE),1):null;
+    const cf=ps&&pe&&f.engineerId?hasCf({id:'__new__',engineerId:f.engineerId},ps,pe,'planning'):false;
+    con=`${f._sg?`<div class="alert ai" style="margin-bottom:12px">💡 תאריך מומלץ: <strong>${fmtD(f._sg)}</strong></div>`:''}
+    ${cf?`<div class="alert aw" style="margin-bottom:12px">⚠️ חפיפה עם מתכנן זה</div>`:''}
+    <div class="g2"><div class="fld"><label class="fl">תחילת תכנון *</label>
+      <input type="date" ${fi('planStart')} value="${f.planStart||''}" onchange="hPSChange(this.value)">${err('planStart')}</div></div>
+    ${ps?`<div style="background:#0f172a;border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:600;color:var(--t3);margin-bottom:10px">לוח זמנים מחושב</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`<div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33"><div style="font-size:29px;color:var(--t3);margin-bottom:3px">${l}</div><div style="font-weight:600;color:${c};font-size:28px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div></div>`).join('')}
+      </div></div>`:``}`;
+  }else{
+    const items=f._pi||[];
+    con=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:28px;color:var(--t3)">אביזרים לרכש</div>
+      <button class="btn pri sm" onclick="doAddFPI()">+ הוסף</button></div>
+    ${items.map((item,i)=>`<div style="display:flex;gap:10px;align-items:flex-end;background:#0f172a;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--b)">
+      <div class="fld" style="flex:1;margin:0"><label class="fl">אביזר</label><select class="fi" onchange="S.nf._pi[${i}].name=this.value"><option value="">בחר...</option>${S.pmaster.map(n=>`<option${item.name===n?' selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="fld" style="flex:1;margin:0"><label class="fl">אספקה צפויה</label><input type="date" class="fi" value="${item.expected||''}" onchange="S.nf._pi[${i}].expected=this.value"></div>
+      <button class="btn xs" style="color:#fca5a5;margin-bottom:2px" onclick="S.nf._pi.splice(${i},1);render()">×</button>
+    </div>`).join('')}`;
+  }
+  const sHtml=`<div style="display:flex;align-items:center;gap:0;margin-bottom:22px">
+    ${steps.map((l,i)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
+      <div class="step-dot" style="background:${step>i+1?'#16a34a':step===i+1?'#3b82f6':'#1e293b'};border-color:${step>i+1?'#15803d':step===i+1?'#2563eb':'#334155'};color:${step>=i+1?'#fff':'#475569'}">${step>i+1?'✓':i+1}</div>
+      <div style="font-size:29px;color:${step===i+1?'#93c5fd':'var(--t3)'}">${l}</div>
+    </div>${i<steps.length-1?`<div style="flex:1;height:2px;background:var(--b)"></div>`:''}`).join('')}</div>`;
+  return`<div class="mbg">
+    <div class="modal wide">
+      <div class="mhd"><div class="mttl">פרויקט חדש</div><button class="btn sm" onclick="closeM()">✕</button></div>
+      <div class="mbdy">${sHtml}${con}</div>
+      <div class="mft">
+        <button class="btn" onclick="closeM()">ביטול</button>
+        ${step>1?`<button class="btn" onclick="V('fs',S.fs-1)">← אחורה</button>`:''}
+        ${step<3?`<button class="btn pri" onclick="doNextStep()">הבא →</button>`:`<button class="btn pri" onclick="doSaveProj()">✓ שמור</button>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── USER MODAL (with password field) ─────────────────────────
+function renderUM(){
+  const isE=S.modal==='editUser',u=isE?S.md:S.nf;
+  return`<div class="mbg" onclick="if(event.target===this)closeM()">
+    <div class="modal sm">
+      <div class="mhd"><div class="mttl">${isE?'עריכת משתמש':'הוספת משתמש'}</div><button class="btn sm" onclick="closeM()">✕</button></div>
+      <div class="mbdy">
+        <div class="g2">
+          <div class="fld"><label class="fl">שם מלא *</label><input class="fi" id="um_name" autocomplete="off" value="${u.name||''}" placeholder="שם מלא"></div>
+          <div class="fld"><label class="fl">תפקיד</label>
+            <select class="fi" id="um_role">${S.roles.map(r=>`<option value="${r.id}"${u.roleId===r.id?' selected':''}>${r.name}</option>`).join('')}</select></div>
+          <div class="fld"><label class="fl">אימייל *</label><input class="fi" id="um_email" type="email" autocomplete="off" value="${u.email||''}" placeholder="user@company.com"></div>
+          <div class="fld"><label class="fl">נייד</label><input class="fi" id="um_phone" autocomplete="off" value="${u.phone||''}" placeholder="050-0000000"></div>
+        </div>
+        <div class="fld"><label class="fl">${isE?'סיסמא חדשה (השאר ריק לאי-שינוי)':'סיסמא ראשונית *'}</label>
+          <div style="position:relative">
+            <input class="fi" id="um_pass" type="text" autocomplete="off"
+              placeholder="${isE?'הכנס סיסמא חדשה':'לפחות 6 תווים'}"
+              style="font-family:'IBM Plex Mono',monospace;letter-spacing:.5px">
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px">🔒 גלוי למנהל בלבד</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <label class="tog"><input type="checkbox" id="um_agent" ${u.isAgent?'checked':''}><span class="tog-sl"></span></label>
+          <span style="font-size:28px">סוכן אחראי</span>
+        </div>
+        ${isE?`<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <label class="tog"><input type="checkbox" id="um_active" ${u.active!==false?'checked':''}><span class="tog-sl"></span></label>
+          <span style="font-size:28px">משתמש פעיל</span></div>`:''}
+        <div id="um_err" style="color:#fca5a5;font-size:16px;margin-top:8px"></div>
+      </div>
+      <div class="mft">
+        <button class="btn" onclick="closeM()">ביטול</button>
+        <button class="btn pri" id="um_save" onclick="${isE?'doSaveEU()':'doSaveNU()'}">✓ שמור</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── OTHER MODALS ──────────────────────────────────────────────
+function renderRM(){
+  const p=S.projects.find(x=>pid(x)===S.md.pid);
+  return`<div class="mbg" onclick="if(event.target===this)closeM()">
+    <div class="modal sm">
+      <div class="mhd"><div class="mttl">דחיית פרויקט</div><button class="btn sm" onclick="closeM()">✕</button></div>
+      <div class="mbdy">
+        <div class="alert aw">תישלח הודעה ליוזם</div>
+        <div style="font-size:29px;margin-bottom:12px;font-weight:500">${p?.client} — ${p?.projectName}</div>
+        <div class="fld"><label class="fl">סיבת הדחייה</label>
+          <textarea class="fi" id="rm_note" rows="3" placeholder="כתוב סיבה...">${S.md.rn||''}</textarea></div>
+      </div>
+      <div class="mft"><button class="btn" onclick="closeM()">ביטול</button><button class="btn dan" onclick="doRejP('${S.md.pid}')">שלח דחייה</button></div>
+    </div>
+  </div>`;
+}
+
+function renderCancelProj(){
+  const p=S.projects.find(x=>pid(x)===S.md.pid);
+  if(!p)return'';
+  const step=S.md._cancelStep||1;
+  return`<div class="mbg" onclick="if(event.target===this)closeM()">
+    <div class="modal sm">
+      <div class="mhd">
+        <div>
+          <div class="mttl" style="color:#f87171">🗑 ביטול פרויקט</div>
+          <div class="msub">${p.client} — ${p.projectName}</div>
+        </div>
+        <button class="btn sm" onclick="closeM()">✕</button>
+      </div>
+      <div class="mbdy">
+        ${step===1?`
+          <div class="alert ae" style="margin-bottom:16px">
+            ⚠️ פעולה זו תבטל את הפרויקט לצמיתות ולא ניתן לבטלה
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;font-size:28px">
+            <div class="tt-row"><span class="tt-lbl">לקוח</span><span style="font-weight:600">${p.client}</span></div>
+            <div class="tt-row"><span class="tt-lbl">הזמנה</span><span class="mono">${p.orderNum}</span></div>
+            <div class="tt-row"><span class="tt-lbl">סטטוס נוכחי</span><span>${sbdg(p)}</span></div>
+            <div class="tt-row"><span class="tt-lbl">התקנה מתוכננת</span><span class="mono">${fmtD(p.installDate)}</span></div>
+          </div>
+          <div class="fld">
+            <label class="fl">סיבת הביטול *</label>
+            <textarea class="fi" id="cancel_note" rows="4"
+              placeholder="פרט את סיבת ביטול הפרויקט..."
+              style="resize:vertical">${S.md._cancelNote||''}</textarea>
+            <div style="font-size:29px;color:var(--t3);margin-top:3px">סיבה זו תירשם בלוג הפעולות ותצורף להערות הפרויקט</div>
+          </div>
+        `:`
+          <div class="alert ae" style="margin-bottom:16px;flex-direction:column;align-items:flex-start;gap:8px">
+            <div style="font-weight:700;font-size:29px">⚠️ אישור סופי — האם אתה בטוח?</div>
+            <div>הפרויקט <strong>${p.client}</strong> יבוטל לצמיתות</div>
+          </div>
+          <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--r8);padding:12px 14px;margin-bottom:14px">
+            <div style="font-size:16px;color:var(--t3);margin-bottom:4px">סיבת הביטול:</div>
+            <div style="font-size:29px;color:var(--t)">${S.md._cancelNote||'—'}</div>
+          </div>
+          <div style="font-size:28px;color:var(--t3)">לחץ "אשר ביטול" כדי לאשר סופית</div>
+        `}
+      </div>
+      <div class="mft" style="justify-content:space-between">
+        ${step===1
+          ?`<button class="btn sec" onclick="closeM()">ביטול</button>
+            <button class="btn dan" onclick="doCancelStep1()">המשך ←</button>`
+          :`<button class="btn sec" onclick="S.md._cancelStep=1;render()">← חזור</button>
+            <button class="btn dan" id="finalCancelBtn" onclick="doCancelProjectFinal('${pid(p)}')">🗑 אשר ביטול</button>`
+        }
+      </div>
+    </div>
+  </div>`;
+}
+function renderPM(){
+  const{pid:ppid,iid}=S.md,p=S.projects.find(x=>pid(x)===ppid),item=(p?.procurement||[]).find(i=>i.id===iid);
+  if(!item)return'';
+  const ds=item.cancelled?'can':item.arrived?'arr':toD(item.expected)&&toD(item.expected)<TODAY?'late':'pend';
+  const dl={arr:'הגיע',late:'באיחור',pend:'ממתין',can:'בוטל'};
+  return`<div class="mbg" onclick="if(event.target===this)closeM()">
+    <div class="modal sm">
+      <div class="mhd"><div><div class="mttl">📦 ${item.name}</div><div style="font-size:16px;color:var(--t3)">${p?.client}</div></div><button class="btn sm" onclick="closeM()">✕</button></div>
+      <div class="mbdy">
+        <div style="margin-bottom:12px">${bdg('by',dl[ds])}</div>
+        <div class="fld"><label class="fl">הוזמן</label><input type="date" class="fi" value="${toISO(item.ordered)}" onchange="doUpPD('${ppid}','${iid}','ordered',this.value)"></div>
+        <div class="fld"><label class="fl">אספקה צפויה</label><input type="date" class="fi" value="${toISO(item.expected)}" onchange="doUpPD('${ppid}','${iid}','expected',this.value)"></div>
+        ${item.arrived?`<div class="alert aok">✓ הגיע ${fmtD(item.arrivedDate)}</div>`:''}
+        ${!item.arrived&&!item.cancelled?`
+          <button class="btn pri" style="width:100%;margin-bottom:8px" onclick="doMarkArr('${ppid}','${iid}');closeM()">✓ סמן כהגיע</button>
+          <button class="btn" style="width:100%;color:#fca5a5" onclick="doCncPC('${ppid}','${iid}');closeM()">✕ בטל</button>`:''}
+      </div>
+      <div class="mft" style="justify-content:space-between">
+        <button class="btn dan sm" onclick="openCancelProj('${pid(p)}')" style="opacity:.7">
+          🗑 ביטול פרויקט
+        </button>
+        <button class="btn" onclick="closeM()">סגור</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────────
+function render(){
+  if(S.loading){
+    document.getElementById('root').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;gap:14px"><div class="spin"></div><div style="color:#64748b">טוען...</div></div>`;
+    return;
+  }
+  if(!S.authUser||!S.currentUser){
+    document.getElementById('root').innerHTML=renderLogin();
+    return;
+  }
+  let body='',modal='';
+  if(S.view==='dashboard')body=renderDash();
+  else if(S.view==='projects')body=renderProjects();
+  else if(S.view==='gantt')body=renderGantt();
+  else if(S.view==='milestones')body=renderMilestones();
+  else if(S.view==='approval')body=renderApproval();
+  else if(S.view==='archive')body=renderArchive();
+  else if(S.view==='admin')body=renderAdmin();
+  if(S.modal==='pd')modal=renderPD();
+  else if(S.modal==='np')modal=renderNP();
+  else if(S.modal==='addUser'||S.modal==='editUser')modal=renderUM();
+  else if(S.modal==='pm')modal=renderPM();
+  else if(S.modal==='rm')modal=renderRM();
+  else if(S.modal==='cancelProj')modal=renderCancelProj();
+  try{
+    document.getElementById('root').innerHTML=`<div class="app">${renderTopbar()}${body}${modal}</div>`;
+  }catch(err){
+    console.error('Render error:',err);
+    document.getElementById('root').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:20px;text-align:center"><div style="font-size:32px">⚠️</div><div style="color:#f87171;font-size:28px">שגיאת תצוגה</div><div style="color:#64748b;font-size:28px">${err.message}</div><button onclick="location.reload()" style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px">רענן דף</button></div>`;
+  }
+  if(S.view==='admin'&&!S.adminOK)setTimeout(()=>document.getElementById('pin0')?.focus(),50);
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────
+function V(k,v){S[k]=v;render();}
+function openPD(id){S.modal='pd';S.md={pid:id};S.mt='schedule';S.nn='';render();}
+function openPM(pj,it){S.modal='pm';S.md={pid:pj,iid:it};render();}
+function openNP(){S.modal='np';S.nf={_pi:[]};S.fs=1;S.ferr={};render();}
+function openAL(){S.view='admin';render();}
+function openRM(id){S.modal='rm';S.md={pid:id,rn:''};render();}
+function openAU(){S.modal='addUser';S.nf={roleId:'eng',active:true,isAgent:false};render();}
+function openEU(id){S.modal='editUser';S.md={...S.users.find(u=>u.id===id)};render();}
+function closeM(){S.modal=null;S.md={};S.nn='';S.nf={};S.fs=1;S.ferr={};render();}
+function switchAdminTab(k){S.at=k;if(k==='auditlog')loadAuditLogs().then(render);else render();}
+
+function hPin(i,v){
+  const ch=v.slice(-1);S.pin[i]=ch;
+  const el=document.getElementById('pin'+i);if(el)el.value=ch;
+  if(ch&&i<3){const n=document.getElementById('pin'+(i+1));if(n){n.focus();n.select();}}
+  if(S.pin.filter(Boolean).length===4&&!S.pin.includes(''))doSubPin();
+}
+function hPinK(e,i){
+  if(e.key==='Backspace'){S.pin[i]='';const el=document.getElementById('pin'+i);if(el)el.value='';if(i>0)document.getElementById('pin'+(i-1))?.focus();}
+  if(e.key==='Enter')doSubPin();
+}
+function doSubPin(){
+  if(S.pin.join('')==='1234'){S.adminOK=true;S.pinErr=false;S.pin=['','','',''];render();}
+  else{S.pinErr=true;S.pin=['','','',''];render();setTimeout(()=>{[0,1,2,3].forEach(i=>{const el=document.getElementById('pin'+i);if(el)el.value='';});document.getElementById('pin0')?.focus();},10);}
+}
+function doTogNotif(uid,k,v){S.users=S.users.map(u=>u.id===uid?{...u,notif:{...(u.notif||{}),[k]:v}}:u);fbSaveSettings();render();}
+function doDelUser(id){
+  if(!confirm('למחוק משתמש זה?'))return;
+  const u=S.users.find(x=>x.id===id);
+  S.users=S.users.filter(u=>u.id!==id);
+  fbSaveSettings();
+  logAction('delete_user',u?.name||'');
+  render();
+}
+function doAddPM(){const n=prompt('שם האביזר:');if(n?.trim()){S.pmaster=[...S.pmaster,n.trim()];fbSaveSettings();}render();}
+function doRmPM(i){S.pmaster=S.pmaster.filter((_,j)=>j!==i);fbSaveSettings();render();}
+
+// Create Firebase Auth user + save to settings
+async function doSaveNU(){
+  const name=(document.getElementById('um_name')?.value||'').trim();
+  const email=(document.getElementById('um_email')?.value||'').trim();
+  const pass=document.getElementById('um_pass')?.value||'';
+  const roleId=document.getElementById('um_role')?.value||'eng';
+  const phone=document.getElementById('um_phone')?.value||'';
+  const isAgent=document.getElementById('um_agent')?.checked||false;
+  const errEl=document.getElementById('um_err');
+  if(!name){if(errEl)errEl.textContent='שם הוא שדה חובה';return;}
+  if(!email){if(errEl)errEl.textContent='אימייל הוא שדה חובה';return;}
+  if(pass.length<6){if(errEl)errEl.textContent='סיסמא חייבת להיות לפחות 6 תווים';return;}
+  const btn=document.getElementById('um_save');if(btn)btn.disabled=true;
+  if(errEl)errEl.textContent='יוצר משתמש...';
+  try{
+    // Create Firebase Auth user
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    const nu={id:cred.user.uid,name,email,phone,roleId,isAgent,active:true,notif:defNotif()};
+    S.users=[...S.users,nu];
+    await fbSaveSettings();
+    await logAction('add_user',name);
+    closeM();
+  }catch(e){
+    const msgs={'auth/email-already-in-use':'אימייל כבר קיים במערכת','auth/invalid-email':'אימייל לא תקין','auth/weak-password':'סיסמא חלשה מדי'};
+    if(errEl)errEl.textContent=msgs[e.code]||e.message;
+    if(btn)btn.disabled=false;
+  }
+}
+
+async function doSaveEU(){
+  const name=(document.getElementById('um_name')?.value||'').trim();
+  const email=(document.getElementById('um_email')?.value||'').trim();
+  const pass=document.getElementById('um_pass')?.value||'';
+  const roleId=document.getElementById('um_role')?.value||S.md.roleId;
+  const phone=document.getElementById('um_phone')?.value||'';
+  const isAgent=document.getElementById('um_agent')?.checked||false;
+  const active=document.getElementById('um_active')?.checked!==false;
+  const errEl=document.getElementById('um_err');
+  if(!name){if(errEl)errEl.textContent='שם הוא שדה חובה';return;}
+  // Update password if provided
+  if(pass&&pass.length>0){
+    if(pass.length<6){if(errEl)errEl.textContent='סיסמא חייבת להיות לפחות 6 תווים';return;}
+    // Note: can only change password for currently signed-in user via Firebase Auth
+    if(S.authUser&&S.md.id===S.authUser.uid){
+      try{await updatePassword(S.authUser,pass);}
+      catch(e){if(errEl)errEl.textContent='שגיאה בעדכון סיסמא: '+e.message;return;}
+    }
+  }
+  S.users=S.users.map(u=>u.id===S.md.id?{...S.md,name,email,phone,roleId,isAgent,active}:u);
+  await fbSaveSettings();
+  await logAction('update_user',name);
+  closeM();
+}
+
+function hEngChange(val){S.nf.engineerId=val;if(val&&S.nf.planHours){const sg=sugStart({id:'__new__',engineerId:val,planHours:S.nf.planHours},'planning');S.nf._sg=sg;S.nf.planStart=toISO(sg);}render();}
+function hPSChange(val){S.nf.planStart=val;render();}
+
+// ── EXCEL PARSER ─────────────────────────────────────────────
+async function parseExcel(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        // Load SheetJS dynamically
+        if(typeof XLSX==='undefined'){reject(new Error('SheetJS not loaded'));return;}
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        resolve(extractFromWB(wb));
+      }catch(err){reject(err);}
+    };
+    reader.onerror=reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function extractFromWB(wb){
+  // ── Find main pricing sheet ──
+  const skipSheets=['חישוב','שרטוט','סקר','כלוב','תוספות','sheet'];
+  let ws=null,wsName='';
+  for(const name of wb.SheetNames){
+    if(skipSheets.some(s=>name.toLowerCase().includes(s.toLowerCase())&&name!=='שרטוט/ תכנון'))continue;
+    const sheet=wb.Sheets[name];
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});
+    const hasWork=rows.some(r=>r.some(c=>typeof c==='string'&&c.trim()==='עבודה'));
+    if(hasWork){ws=rows;wsName=name;break;}
+  }
+  // fallback: first sheet
+  if(!ws){
+    const name=wb.SheetNames[0];
+    ws=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:null});
+    wsName=name;
+  }
+
+  // ── Find item col and qty col ──
+  // Look for header row with 'פריט' and 'כמות'
+  let itemCol=0,qtyCol=2;
+  for(let i=0;i<Math.min(5,ws.length);i++){
+    const row=ws[i];
+    const pi=row.findIndex(c=>typeof c==='string'&&c.includes('פריט'));
+    const qi=row.findIndex(c=>typeof c==='string'&&c.includes('כמות'));
+    if(pi>=0)itemCol=pi;
+    if(qi>=0)qtyCol=qi;
+    if(pi>=0&&qi>=0)break;
+  }
+
+  // ── Helper: find numeric qty in row ──
+  const getNum=(row,col)=>{
+    const v=row[col];
+    if(typeof v==='number'&&v>0)return v;
+    // search nearby cols
+    for(let c=Math.max(0,col-1);c<=Math.min(row.length-1,col+2);c++){
+      if(typeof row[c]==='number'&&row[c]>0)return row[c];
+    }
+    return 0;
+  };
+
+  // ── Helper: get cell as string ──
+  const str=v=>(v==null?'':String(v).trim());
+
+  // ── Scan rows ──
+  let prodHours=0,planHours=0,installWorkerDays=0;
+  const installRows=[];
+  const procFound=[];
+  let projectDesc='';
+
+  // Detect project name from first few rows
+  for(let i=0;i<5;i++){
+    const row=ws[i]||[];
+    for(const cell of row){
+      const s=str(cell);
+      if(s.length>5&&(s.includes('שואב')||s.includes('פילטר')||s.includes('ציקלון')||s.includes('מסנן'))&&!projectDesc){
+        projectDesc=s;break;
+      }
+    }
+  }
+
+  for(const row of ws){
+    const item=str(row[itemCol]);
+    if(!item)continue;
+    const qty=getNum(row,qtyCol);
+
+    // Production hours: row is exactly 'עבודה' (not עיבוד/עבודת פחח)
+    if(item==='עבודה'&&qty>0&&prodHours===0){
+      prodHours=qty;
+    }
+
+    // Planning hours: שרטוט / תכנון / שרטוט/ תכנון
+    if((item.includes('שרטוט')||item==='תכנון'||item.includes('תכנון צנרת')===false&&item.includes('תכנון'))&&qty>0&&planHours===0){
+      planHours=qty;
+    }
+
+    // Installation rows: any row starting with 'התקנת'
+    if(item.startsWith('התקנת')&&qty>0){
+      installRows.push({name:item,qty});
+      installWorkerDays+=qty;
+    }
+  }
+
+  // ── Procurement matching ──
+  // Build alias map: excel row name → pmaster item name
+  const aliases={
+    'לוח חשמל':'ארון חשמל','ארון חשמל':'ארון חשמל',
+    'מפוח':'מפוח','מפוח רגנרטיבי':'מפוח',
+    'ברזים':'ברזים','ברז':'ברזים',
+    'מד לחץ הפרשי':'מד לחץ הפרשי','מד לחץ':'מד לחץ הפרשי',
+    'מיכל אויר':'מיכל אויר',
+    'חילזון':'חילזון',
+    'מזין כוכבי':'מזין כוכבי','ברז כוכבי':'מזין כוכבי',
+    'מנוף':'מנוף','הובלה+הנפה':'מנוף',
+    'בידוד':'בידוד',
+    'משתיק קול':'משתיק קול',
+  };
+  const foundProcNames=new Set();
+  for(const row of ws){
+    const item=str(row[itemCol]).trim();
+    if(!item)continue;
+    const qty=getNum(row,qtyCol);
+    if(qty<=0)continue;
+    // Check pmaster
+    for(const pm of (S.pmaster||[])){
+      const pmLower=pm.toLowerCase();
+      const itemLower=item.toLowerCase();
+      const aliasMatch=aliases[item];
+      const directMatch=itemLower===pmLower||itemLower.includes(pmLower)||pmLower.includes(itemLower);
+      const resolvedName=aliasMatch||pm;
+      if((directMatch||(aliasMatch&&aliasMatch===pm))&&!foundProcNames.has(pm)){
+        foundProcNames.add(pm);
+        procFound.push({name:pm,qty});
+        break;
+      }
+    }
+  }
+
+  // ── Installation days = total worker-days / 2 workers ──
+  const installWorkersPerDay=2; // default, user can change
+  const installDays=Math.ceil(installWorkerDays/installWorkersPerDay);
+
+  return{
+    projectDesc,prodHours,planHours,
+    installWorkerDays,installWorkersPerDay,installDays,
+    installRows,procFound,
+  };
+}
+
+async function processExcelFile(file){
+  S.nf._parsed=file.name;
+  S.nf._parseErr=null;
+  S.nf._parsing=true;
+  render();
+  try{
+    // Load SheetJS if not loaded
+    if(typeof XLSX==='undefined'){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload=res;s.onerror=rej;
+        document.head.appendChild(s);
+      });
+    }
+    const result=await parseExcel(file);
+    // Auto-fill form fields
+    if(result.projectDesc&&!S.nf.projectName){
+      S.nf.projectName=result.projectDesc.slice(0,60);
+    }
+    if(result.prodHours>0)S.nf.prodHours=result.prodHours;
+    if(result.planHours>0)S.nf.planHours=result.planHours;
+    if(result.installDays>0)S.nf.installDays=result.installDays;
+    if(result.installWorkersPerDay)S.nf.installWorkersPerDay=result.installWorkersPerDay;
+    S.nf._installWorkerDays=result.installWorkerDays;
+    S.nf._installRows=result.installRows;
+    // Procurement
+    if(result.procFound.length>0){
+      const existing=(S.nf._pi||[]).map(i=>i.name);
+      result.procFound.forEach(p=>{
+        if(!existing.includes(p.name))S.nf._pi=[...(S.nf._pi||[]),{name:p.name,expected:''}];
+      });
+    }
+    S.nf._parseResult=result;
+  }catch(err){
+    S.nf._parseErr='שגיאה בקריאת הקובץ: '+err.message;
+    console.error(err);
+  }
+  S.nf._parsing=false;
+  render();
+}
+
+
+function recalcInstallDays(workers){
+  const w=parseInt(workers)||2;
+  S.nf.installWorkersPerDay=w;
+  if(S.nf._installWorkerDays){
+    S.nf.installDays=Math.ceil(S.nf._installWorkerDays/w);
+  }
+  render();
+}
+function hFU(input){const file=input.files[0];if(!file)return;processExcelFile(file);}
+function hDrop(e){e.preventDefault();const file=e.dataTransfer.files[0];if(!file)return;processExcelFile(file);}
+
+function doAddFPI(){S.nf._pi=[...(S.nf._pi||[]),{name:'',expected:''}];render();}
+
+function doNextStep(){
+  if(S.fs===1){
+    const ids=['orderNum','client','projectName','projectType','agentId','engineerId','prodManagerId','planHours','prodHours'];
+    ids.forEach(id=>{const el=document.getElementById(id);if(el)S.nf[id]=el.value;});
+    // also capture installDays and workersPerDay
+    const idEl=document.getElementById('installDays');
+    if(idEl&&idEl.value)S.nf.installDays=parseInt(idEl.value)||0;
+    const wpEl=document.getElementById('installWorkersPerDay');
+    if(wpEl&&wpEl.value)S.nf.installWorkersPerDay=parseInt(wpEl.value)||2;
+    const errs={};ids.forEach(id=>{if(!S.nf[id])errs[id]=1;});
+    if(Object.keys(errs).length){S.ferr=errs;render();return;}
+  }
+  if(S.fs===2){const el=document.getElementById('planStart');if(el)S.nf.planStart=el.value;if(!S.nf.planStart){S.ferr={planStart:1};render();return;}}
+  S.ferr={};S.fs++;render();
+}
+async function doSaveProj(){
+  const ps=S.nf.planStart?new Date(S.nf.planStart):null;if(!ps)return;
+  const pe=bizEnd(ps,S.nf.planHours),prS=addD(nextBiz(pe),1),prE=bizEnd(prS,S.nf.prodHours),ins=addD(nextBiz(prE),1);
+  // If installDays provided, recalculate installDate from prodEnd
+  const installDays=parseInt(S.nf.installDays)||0;
+  const insDate=installDays>0?bizEnd(addD(nextBiz(prE),1),installDays*8):ins;
+  const np={id:'P'+Date.now(),orderNum:S.nf.orderNum,client:S.nf.client,projectName:S.nf.projectName,projectType:S.nf.projectType,
+    agentId:S.nf.agentId,engineerId:S.nf.engineerId,prodManagerId:S.nf.prodManagerId,
+    planStart:ps.toISOString(),planEnd:pe.toISOString(),planHours:parseInt(S.nf.planHours),actualPlanEnd:null,
+    prodStart:prS.toISOString(),prodEnd:prE.toISOString(),prodHours:parseInt(S.nf.prodHours),actualProdEnd:null,
+    installDays:installDays||null,
+    installDate:insDate.toISOString(),status:'תכנון',approved:false,rejected:false,
+    notes:[{user:cu()?.name||'',text:'פרויקט נפתח',date:TODAY.toISOString()}],
+    procurement:(S.nf._pi||[]).filter(it=>it.name).map((it,i)=>({id:'i'+Date.now()+i,name:it.name,ordered:null,expected:it.expected?new Date(it.expected).toISOString():null,arrived:false,arrivedDate:null,cancelled:false}))};
+  S.projects=[...S.projects,np];closeM();S.view='approval';render();
+  await fbSaveProj(np);
+  await logAction('new_project',`${np.client} — ${np.projectName}`);
+}
+async function doApprove(id){
+  const p=S.projects.find(x=>pid(x)===id);
+  upProj(id,{approved:true,status:'ממתין לתכנון',approvedDate:new Date().toISOString()});
+  await logAction('approve',p?.client||'');
+  if(p)await notifyUsers('statusChange','✅ פרויקט אושר',
+    `פרויקט ${p.client} אושר ונכנס ללוח הזמנים.\nתכנון: ${fmtD(p.planStart)} → ${fmtD(p.planEnd)}\nהתקנה: ${fmtD(p.installDate)}`,
+    p.client);
+}
+async function doRejP(id){
+  const p=S.projects.find(x=>pid(x)===id);
+  upProj(id,{rejected:true,approved:false});
+  await logAction('reject',p?.client||'');
+  if(p)await notifyUsers('statusChange','❌ פרויקט נדחה',
+    `פרויקט ${p.client} נדחה על ידי ${cu()?.name||'מנהל'}.`,
+    p.client);
+  closeM();
+}
+async function doUpDate(id,k,v){
+  const p=S.projects.find(x=>pid(x)===id);
+  upProj(id,{[k]:v?new Date(v).toISOString():null});
+  await logAction('update_date',`${p?.client||''} — ${k}`);
+}
+async function doUpStatus(id,v){
+  const p=S.projects.find(x=>pid(x)===id);
+  upProj(id,{status:v});
+  await logAction('update_status',`${p?.client||''} → ${v}`);
+  if(p)await notifyUsers('statusChange','🔄 סטטוס עודכן',
+    `סטטוס פרויקט ${p.client} שונה ל: ${v}`,p.client);
+}
+function doAddPI(pid2){upProj(pid2,{procurement:[...(S.projects.find(p=>pid(p)===pid2)?.procurement||[]),{id:'i'+Date.now(),name:S.pmaster[0]||'',ordered:null,expected:null,arrived:false,arrivedDate:null,cancelled:false}]});}
+function doUpPC(pid2,iid,k,v){
+  const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;
+  S.projects=S.projects.map(x=>{
+    if(pid(x)!==pid2)return x;
+    return{...x,procurement:x.procurement.map(i=>i.id===iid?{...i,[k]:v}:i)};
+  });
+  clearTimeout(_saveQ[pid2]);
+  _saveQ[pid2]=setTimeout(()=>{
+    const updated=S.projects.find(x=>pid(x)===pid2);
+    if(updated)fbSaveProj(updated);
+  },600);
+}
+function doUpPD(pid2,iid,k,v){
+  const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;
+  // Update in state without immediate re-render (prevents input focus loss)
+  S.projects=S.projects.map(x=>{
+    if(pid(x)!==pid2)return x;
+    return{...x,procurement:x.procurement.map(i=>i.id===iid?{...i,[k]:v?new Date(v).toISOString():null}:i)};
+  });
+  // Debounced save
+  clearTimeout(_saveQ[pid2]);
+  _saveQ[pid2]=setTimeout(()=>{
+    const updated=S.projects.find(x=>pid(x)===pid2);
+    if(updated)fbSaveProj(updated);
+  },600);
+  // Light re-render only if value changes status (arrived/cancelled etc)
+  // For date changes, just save without re-render
+}
+function doMarkArr(pid2,iid){const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;upProj(pid2,{procurement:p.procurement.map(i=>i.id===iid?{...i,arrived:true,arrivedDate:TODAY.toISOString()}:i)});}
+function doCncPC(pid2,iid){const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;upProj(pid2,{procurement:p.procurement.map(i=>i.id===iid?{...i,cancelled:true}:i)});}
+async function doAddNote(pid2){
+  const inp=document.getElementById('note_inp');
+  const t=(inp?.value||S.nn||'').trim();
+  if(!t)return;
+  const p=S.projects.find(x=>pid(x)===pid2);if(!p)return;
+  upProj(pid2,{notes:[...(p.notes||[]),{user:cu()?.name||'',text:t,date:TODAY.toISOString()}]});
+  if(inp)inp.value='';
+  S.nn='';
+  await logAction('add_note',p.client||'');
+  // Send email to selected recipients
+  const recipients=(S.md._noteRecipients||[]);
+  if(recipients.length>0){
+    const targets=S.users.filter(u=>recipients.includes(u.id)&&u.email);
+    for(const u of targets){
+      await sendMail(u.name,u.email,'📝 הערה חדשה',
+        `הערה מאת ${cu()?.name||''}:\n\n${t}\n\nפרויקט: ${p.client||''} (${p.orderNum||''})`,
+        p.client||'');
+    }
+    S.md._noteRecipients=[];
+  }
+  render();
+}
+
+
+async function doMarkArrFromSchedule(pid2,iid){
+  const p=S.projects.find(x=>pid(x)===pid2);
+  if(!p)return;
+  const proc=p.procurement.map(i=>i.id===iid?{...i,arrived:true,arrivedDate:new Date().toISOString()}:i);
+  upProj(pid2,{procurement:proc});
+  // clear confirm state
+  const key='_procConfirm_'+iid;
+  S.md[key]=false;
+  await logAction('add_note',`${p.client||''} — ציוד הגיע: ${p.procurement.find(i=>i.id===iid)?.name||''}`);
+  render();
+}
+
+
+async function doApprovalSaveEdit(id){
+  const ef=S.md._editForm||{};
+  const p=S.projects.find(x=>pid(x)===id);
+  if(!p)return;
+  const ps=ef.planStart?new Date(ef.planStart):toD(p.planStart);
+  const ph=parseInt(ef.planHours||p.planHours||30);
+  const prh=parseInt(ef.prodHours||p.prodHours||80);
+  if(!ps)return;
+  const pe=bizEnd(ps,ph),prS=addD(nextBiz(pe),1),prE=bizEnd(prS,prh),ins=addD(nextBiz(prE),1);
+  upProj(id,{
+    planStart:ps.toISOString(),planEnd:pe.toISOString(),planHours:ph,
+    prodStart:prS.toISOString(),prodEnd:prE.toISOString(),prodHours:prh,
+    installDate:ins.toISOString()
+  });
+  S.md._approvalEdit=null;S.md._editForm={};
+  await logAction('update_date',`${p.client||''} — עדכון לוח זמנים לפני אישור`);
+  render();
+}
+async function doApprovalSaveAndApprove(id){
+  await doApprovalSaveEdit(id);
+  await doApprove(id);
+}
+
+
+async function doPlanStartToday(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  upProj(id,{actualPlanStart:new Date().toISOString(),status:'תכנון'});
+  S.md._planStartConfirm=false;
+  await logAction('update_date',`${p.client||''} — תחילת תכנון בפועל`);
+  render();
+}
+async function doProdStartToday(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  upProj(id,{actualProdStart:new Date().toISOString(),status:'ייצור'});
+  // Clear 'ממתין לייצור'
+  S.md._prodStartConfirm=false;
+  await logAction('update_status',`${p.client||''} — תחילת ייצור בפועל → ייצור`);
+  render();
+}
+async function doMarkInstallDone(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  upProj(id,{actualInstallDate:new Date().toISOString(),status:'הושלם'});
+  S.md._installConfirm=false;
+  await logAction('update_status',`${p.client||''} — התקנה בוצעה → הושלם`);
+  render();
+}
+
+
+async function doMarkPlanDone(id){
+  const today=new Date().toISOString();
+  const p=S.projects.find(x=>pid(x)===id);
+  if(!p)return;
+  const newStatus='ממתין לייצור'; // plan done → waiting for production
+  const changes={actualPlanEnd:today,status:newStatus};
+  if(!p.actualPlanStart)changes.actualPlanStart=today;
+  upProj(id,changes);
+  S.md._planConfirm=false;
+  await logAction('update_status',`${p.client||''} — סיום תכנון → ${newStatus}`);
+  await notifyUsers('statusChange','✅ תכנון הושלם',
+    `תכנון פרויקט ${p.client||''} הסתיים בתאריך ${fmtD(new Date())}.\nשלב הבא: ${newStatus}`,
+    p.client||'');
+  render();
+}
+async function doMarkProdDone(id){
+  const today=new Date().toISOString();
+  const p=S.projects.find(x=>pid(x)===id);
+  if(!p)return;
+  const newStatus='ממתין להתקנה'; // prod done → waiting for installation
+  const changes={actualProdEnd:today,status:newStatus};
+  if(!p.actualProdStart)changes.actualProdStart=today;
+  upProj(id,changes);
+  S.md._prodConfirm=false;
+  await logAction('update_status',`${p.client||''} — סיום ייצור → ${newStatus}`);
+  await notifyUsers('statusChange','✅ ייצור הושלם',
+    `ייצור פרויקט ${p.client||''} הסתיים בתאריך ${fmtD(new Date())}.\nשלב הבא: התקנה`,
+    p.client||'');
+  render();
+}
+
+
+// ── TOOLTIP ──────────────────────────────────────────────────
+const ttEl=()=>document.getElementById('tt');
+function ttShow(html,e){
+  const t=ttEl();if(!t)return;
+  t.innerHTML=html;
+  t.classList.add('show');
+  ttPos(e);
+}
+function ttPos(e){
+  const t=ttEl();if(!t)return;
+  const margin=12,tw=t.offsetWidth||240,th=t.offsetHeight||120;
+  let x=e.clientX+margin,y=e.clientY+margin;
+  if(x+tw>window.innerWidth-8)x=e.clientX-tw-margin;
+  if(y+th>window.innerHeight-8)y=e.clientY-th-margin;
+  t.style.left=x+'px';t.style.top=y+'px';
+}
+function ttHide(){const t=ttEl();if(t)t.classList.remove('show');}
+document.addEventListener('mousemove',e=>{const t=ttEl();if(t&&t.classList.contains('show'))ttPos(e);});
+
+function ttBar(label,pct,col){
+  return`<div style="margin-top:6px"><div style="font-size:29px;color:var(--t3);margin-bottom:3px">${label}</div><div style="height:5px;background:var(--b3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.max(0,pct))}%;background:${col};border-radius:3px"></div></div></div>`;
+}
+
+function buildPlanTT(p){
+  const eng=getUser(p.engineerId),ag=getUser(p.agentId);
+  const st=barSt(p,'planning');
+  const stCol={done:'#4ade80',active:'#60a5fa',overdue:'#f87171',future:'#94a3b8'};
+  const stLbl={done:'הושלם',active:'פעיל',overdue:'חריגה',future:'עתידי'};
+  const days=p.planStart&&p.planEnd?diffD(p.planStart,p.planEnd):null;
+  const elapsed=p.planStart?Math.max(0,diffD(p.planStart,TODAY)):0;
+  const pct=days?Math.min(100,Math.round(elapsed/days*100)):0;
+  const diff=p.actualPlanEnd&&p.planEnd?diffD(p.planEnd,p.actualPlanEnd):null;
+  return`<div class="tt-title">${p.client}</div>
+    <div class="tt-row"><span class="tt-lbl">הזמנה</span><span class="tt-val">${p.orderNum||'—'}</span></div>
+    <div class="tt-row"><span class="tt-lbl">מתכנן</span><span class="tt-val">${eng?.name||'—'}</span></div>
+    <div class="tt-row"><span class="tt-lbl">סטטוס</span><span class="tt-val" style="color:${stCol[st]}">${stLbl[st]}</span></div>
+    <div class="tt-row"><span class="tt-lbl">תחילה</span><span class="tt-val">${fmtD(p.planStart)}</span></div>
+    <div class="tt-row"><span class="tt-lbl">סיום מתוכנן</span><span class="tt-val">${fmtD(p.planEnd)}</span></div>
+    ${p.actualPlanEnd?`<div class="tt-row"><span class="tt-lbl">סיום בפועל</span><span class="tt-val ${diff>0?'err':diff<0?'ok':''}">${fmtD(p.actualPlanEnd)}</span></div>`:''}
+    ${diff!==null?`<div class="tt-row"><span class="tt-lbl">פער</span><span class="tt-val ${diff>0?'err':diff<0?'ok':''}">${diff>0?'+'+diff+' ימים':diff<0?diff+' ימים':'בדיוק'}</span></div>`:''}
+    ${days?ttBar('התקדמות',pct,'#3b82f6'):''}
+    ${p.planHours?`<div class="tt-row" style="margin-top:5px"><span class="tt-lbl">שעות תכנון</span><span class="tt-val">${p.planHours} ש'</span></div>`:''}`;
+}
+
+function buildProdTT(p){
+  const pm=getUser(p.prodManagerId);
+  const st=barSt(p,'production');
+  const stCol={done:'#4ade80',active:'#60a5fa',overdue:'#f87171',future:'#94a3b8'};
+  const stLbl={done:'הושלם',active:'פעיל',overdue:'חריגה',future:'עתידי'};
+  const days=p.prodStart&&p.prodEnd?diffD(p.prodStart,p.prodEnd):null;
+  const elapsed=p.prodStart?Math.max(0,diffD(p.prodStart,TODAY)):0;
+  const pct=days?Math.min(100,Math.round(elapsed/days*100)):0;
+  const diff=p.actualProdEnd&&p.prodEnd?diffD(p.prodEnd,p.actualProdEnd):null;
+  return`<div class="tt-title">${p.client}</div>
+    <div class="tt-row"><span class="tt-lbl">מנהל ייצור</span><span class="tt-val">${pm?.name||'—'}</span></div>
+    <div class="tt-row"><span class="tt-lbl">סטטוס</span><span class="tt-val" style="color:${stCol[st]}">${stLbl[st]}</span></div>
+    <div class="tt-row"><span class="tt-lbl">תחילה</span><span class="tt-val">${fmtD(p.prodStart)}</span></div>
+    <div class="tt-row"><span class="tt-lbl">סיום מתוכנן</span><span class="tt-val">${fmtD(p.prodEnd)}</span></div>
+    ${p.actualProdEnd?`<div class="tt-row"><span class="tt-lbl">סיום בפועל</span><span class="tt-val ${diff>0?'err':diff<0?'ok':''}">${fmtD(p.actualProdEnd)}</span></div>`:''}
+    ${diff!==null?`<div class="tt-row"><span class="tt-lbl">פער</span><span class="tt-val ${diff>0?'err':diff<0?'ok':''}">${diff>0?'+'+diff+' ימים':diff<0?diff+' ימים':'בדיוק'}</span></div>`:''}
+    ${days?ttBar('התקדמות',pct,'#f59e0b'):''}
+    ${p.prodHours?`<div class="tt-row" style="margin-top:5px"><span class="tt-lbl">שעות ייצור</span><span class="tt-val">${p.prodHours} ש'</span></div>`:''}`;
+}
+
+function buildMilestoneTT(p,type){
+  const d=type==='planEnd'?p.planEnd:type==='prodEnd'?p.prodEnd:p.installDate;
+  const actual=type==='planEnd'?p.actualPlanEnd:type==='prodEnd'?p.actualProdEnd:p.actualInstallDate;
+  const lbl=type==='planEnd'?'סיום תכנון':type==='prodEnd'?'סיום ייצור':'התקנה';
+  const diff=actual&&d?diffD(d,actual):!actual&&d&&toD(d)<TODAY?diffD(d,TODAY):null;
+  return`<div class="tt-title">${p.client}</div>
+    <div class="tt-row"><span class="tt-lbl">אבן דרך</span><span class="tt-val">${lbl}</span></div>
+    <div class="tt-row"><span class="tt-lbl">מתוכנן</span><span class="tt-val">${fmtD(d)}</span></div>
+    ${actual?`<div class="tt-row"><span class="tt-lbl">בפועל</span><span class="tt-val ok">${fmtD(actual)}</span></div>`:''}
+    ${diff!==null&&!actual?`<div class="tt-row"><span class="tt-lbl">חריגה</span><span class="tt-val err">+${diff} ימים</span></div>`:''}
+    ${diff!==null&&actual?`<div class="tt-row"><span class="tt-lbl">פער</span><span class="tt-val ${diff>0?'err':diff<0?'ok':''}">${diff>0?'+'+diff:diff} ימים</span></div>`:''}
+    <div class="tt-row"><span class="tt-lbl">הזמנה</span><span class="tt-val">${p.orderNum||'—'}</span></div>`;
+}
+
+function buildProcTT(p,itemId){
+  const item=(p.procurement||[]).find(i=>i.id===itemId);
+  if(!item)return'';
+  const ds=item.cancelled?'can':item.arrived?'arr':toD(item.expected)&&toD(item.expected)<TODAY?'late':'pend';
+  const stCol={arr:'#4ade80',late:'#f87171',pend:'#fbbf24',can:'#94a3b8'};
+  const stLbl={arr:'הגיע ✓',late:'באיחור ⚠',pend:'ממתין',can:'בוטל'};
+  const installDt=toD(p.installDate);
+  const expDt=toD(item.expected);
+  const lateVsInstall=installDt&&expDt&&expDt>installDt&&!item.arrived&&!item.cancelled;
+  const daysToInstall=installDt&&expDt?diffD(expDt,installDt):null;
+  return`<div class="tt-title">📦 ${item.name}</div>
+    <div class="tt-row"><span class="tt-lbl">פרויקט</span><span class="tt-val">${p.client}</span></div>
+    <div class="tt-row"><span class="tt-lbl">סטטוס</span><span class="tt-val" style="color:${stCol[ds]}">${stLbl[ds]}</span></div>
+    ${item.ordered?`<div class="tt-row"><span class="tt-lbl">הוזמן</span><span class="tt-val">${fmtD(item.ordered)}</span></div>`:'<div class="tt-row"><span class="tt-lbl warn">⚠ טרם הוזמן</span></div>'}
+    ${item.expected?`<div class="tt-row"><span class="tt-lbl">אספקה צפויה</span><span class="tt-val ${lateVsInstall?'err':''}">${fmtD(item.expected)}</span></div>`:''}
+    ${item.arrived&&item.arrivedDate?`<div class="tt-row"><span class="tt-lbl">הגיע בפועל</span><span class="tt-val ok">${fmtD(item.arrivedDate)}</span></div>`:''}
+    ${lateVsInstall?`<div style="margin-top:5px;padding:4px 7px;background:rgba(239,68,68,.12);border-radius:5px;font-size:16px;color:#f87171">⚠ אספקה ${Math.abs(daysToInstall)} ימים אחרי ההתקנה</div>`:''}
+    ${!lateVsInstall&&daysToInstall!==null&&!item.arrived?`<div style="margin-top:5px;padding:4px 7px;background:rgba(34,197,94,.1);border-radius:5px;font-size:16px;color:#4ade80">✓ ${daysToInstall} ימים לפני ההתקנה</div>`:''}`;
+}
+
+
+function buildProcSummary(p,md){
+  const proc=p.procurement||[];
+  if(!proc.length)return`<div style="color:var(--t3);font-size:28px;padding:8px 0">אין אביזרי רכש — <button class="btn xs pri" onclick="V('mt','procurement')">עבור לטאב רכש להוספה</button></div>`;
+  const installDt=toD(p.installDate);
+  const rows=proc.map(item=>{
+    const expDt=toD(item.expected);
+    const lateVsInstall=installDt&&expDt&&expDt>installDt&&!item.arrived&&!item.cancelled;
+    const ds=item.cancelled?'can':item.arrived?'arr':expDt&&expDt<TODAY&&!item.arrived?'late':'pend';
+    const dlbl={arr:'הגיע',late:'באיחור',pend:'ממתין',can:'בוטל'};
+    const statusClass=ds==='arr'?'bg':ds==='late'?'br':ds==='can'?'by':'bam';
+    const borderCol=lateVsInstall?'rgba(239,68,68,.35)':`rgba(${ds==='arr'?'34,197,94':ds==='late'?'239,68,68':ds==='pend'?'245,158,11':'100,116,139'},.25)`;
+    const bgCol=`rgba(${ds==='arr'?'34,197,94':ds==='late'?'239,68,68':ds==='pend'?'245,158,11':'100,116,139'},.06)`;
+    const confirmKey='_procConfirm_'+item.id;
+    const isConfirming=md[confirmKey]||false;
+
+    // Action buttons
+    let actionBtn='';
+    if(!item.arrived&&!item.cancelled){
+      actionBtn=!isConfirming
+        ?`<button class="btn xs pri" onclick="S.md['${confirmKey}']=true;render()">✓ הגיע</button>`
+        :`<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+            <span style="font-size:16px;color:#fbbf24">לאשר הגעה?</span>
+            <button class="btn xs dan" onclick="S.md['${confirmKey}']=false;render()">לא</button>
+            <button class="btn xs suc" onclick="doMarkArrFromSchedule('${pid(p)}','${item.id}')">✓ כן</button>
+          </div>`;
+    }
+
+    // Late vs install warning
+    const lateChip=lateVsInstall?`<span class="bdg br" style="font-size:26px">⚠ אחרי התקנה</span>`:'';
+
+    return `<div style="background:${bgCol};border:1px solid ${borderCol};border-radius:var(--r8);padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+      <!-- Header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:29px">${item.name}</span>
+          <span class="bdg ${statusClass}">${dlbl[ds]}</span>
+          ${lateChip}
+        </div>
+        ${actionBtn?`<div>${actionBtn}</div>`:''}
+      </div>
+      <!-- Editable date fields -->
+      <div style="display:grid;grid-template-columns:1fr 1fr${item.arrived?` 1fr`:'`'};gap:10px">
+        <div class="fld" style="margin:0">
+          <label class="fl">תאריך הזמנה</label>
+          <input type="date" class="fi" value="${toISO(item.ordered)}"
+            onchange="doUpPD('${pid(p)}','${item.id}','ordered',this.value)"
+            style="font-size:28px;padding:6px 9px">
+          ${!item.ordered&&!item.cancelled?`<div style="font-size:29px;color:#fbbf24;margin-top:2px">⚠ טרם הוזמן</div>`:''}
+        </div>
+        <div class="fld" style="margin:0">
+          <label class="fl" style="color:${lateVsInstall?'#f87171':''}">אספקה צפויה ${lateVsInstall?'⚠':''}</label>
+          <input type="date" class="fi" value="${toISO(item.expected)}"
+            onchange="doUpPD('${pid(p)}','${item.id}','expected',this.value)"
+            style="font-size:28px;padding:6px 9px;border-color:${lateVsInstall?'rgba(239,68,68,.5)':''}">
+          ${!item.expected&&!item.cancelled?`<div style="font-size:29px;color:#f87171;margin-top:2px">⚠ חסר תאריך אספקה</div>`:''}
+          ${lateVsInstall&&expDt&&installDt?`<div style="font-size:29px;color:#f87171;margin-top:2px">${diffD(p.installDate,item.expected)} ימים אחרי התקנה</div>`:''}
+        </div>
+        ${item.arrived?`<div class="fld" style="margin:0">
+          <label class="fl" style="color:#4ade80">✓ הגיע בפועל</label>
+          <input type="date" class="fi" value="${toISO(item.arrivedDate)}"
+            onchange="doUpPD('${pid(p)}','${item.id}','arrivedDate',this.value)"
+            style="font-size:28px;padding:6px 9px;border-color:rgba(34,197,94,.4)">
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  return`<div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`;
+}
+
+
+function openCancelProj(id){
+  // Close the project detail modal first, open cancel modal
+  S.modal='cancelProj';
+  S.md={pid:id,_cancelStep:1,_cancelNote:''};
+  render();
+}
+
+function doCancelStep1(){
+  const note=document.getElementById('cancel_note')?.value?.trim();
+  if(!note){
+    document.getElementById('cancel_note')?.focus();
+    document.getElementById('cancel_note')?.style && (document.getElementById('cancel_note').style.borderColor='var(--red)');
+    return;
+  }
+  S.md._cancelNote=note;
+  S.md._cancelStep=2;
+  render();
+}
+
+async function doCancelProjectFinal(id){
+  const p=S.projects.find(x=>pid(x)===id);
+  if(!p)return;
+  const note=S.md._cancelNote||'';
+  const cancelledNote={user:cu()?.name||'',text:'פרויקט בוטל. סיבה: '+note,date:new Date().toISOString()};
+  upProj(id,{
+    cancelled:true,
+    cancelledAt:new Date().toISOString(),
+    cancelledBy:cu()?.name||'',
+    cancelNote:note,
+    status:'בוטל',
+    notes:[...(p.notes||[]),cancelledNote]
+  });
+  await logAction('delete',`${p.client||''} — ${note}`);
+  await notifyUsers('statusChange','🗑 פרויקט בוטל',
+    `פרויקט ${p.client||''} בוטל על ידי ${cu()?.name||''}\nסיבה: ${note}`,
+    p.client||'');
+  closeM();
+  S.view='projects';
+  render();
+}
+
+
+// ── FILTER HELPERS ────────────────────────────────────────────
+// Update filter without losing focus on input
+function setDashFilter(key,val){
+  S.dashFilter=S.dashFilter||{status:'all',client:'',agent:'all'};
+  S.dashFilter[key]=val;
+  render();
+  // Restore focus to search input if it was active
+  if(key==='client'){
+    setTimeout(()=>{
+      const el=document.getElementById('dash_search');
+      if(el){el.focus();const l=el.value.length;el.setSelectionRange(l,l);}
+    },0);
+  }
+}
+function setProjFilter(key,val){
+  S.projFilter=S.projFilter||{status:'all',search:'',agent:'all'};
+  S.projFilter[key]=val;
+  render();
+  if(key==='search'){
+    setTimeout(()=>{
+      const el=document.getElementById('proj_search');
+      if(el){el.focus();const l=el.value.length;el.setSelectionRange(l,l);}
+    },0);
+  }
+}
+function clearDashFilter(){S.dashFilter={status:'all',client:'',agent:'all'};render();}
+function clearProjFilter(){S.projFilter={status:'all',search:'',agent:'all'};render();}
+
+
+
+function procGanttBadge(dst,gt){if(gt==='procurement'){const lbls={done:'✓ הגיע',active:'✓ הוזמן',overdue:'⚠ לא הוזמן',future:'—'};const cls={done:'bg',active:'bb',overdue:'br',future:'by'};if(dst==='future')return'<span style="color:var(--t4)">—</span>';return bdg(cls[dst],lbls[dst]);}return bdg(SBDG[dst],SHEB[dst]);}
+
+
+function toggleNoteRecipient(uid){
+  if(!S.md._noteRecipients)S.md._noteRecipients=[];
+  const idx=S.md._noteRecipients.indexOf(uid);
+  if(idx>=0)S.md._noteRecipients.splice(idx,1);
+  else S.md._noteRecipients.push(uid);
+  render();
+}
+function toggleAllNoteRecipients(){
+  const active=S.users.filter(u=>u.active!==false&&u.email);
+  if((S.md._noteRecipients||[]).length===active.length){
+    S.md._noteRecipients=[];
+  } else {
+    S.md._noteRecipients=active.map(u=>u.id);
+  }
+  render();
+}
+
+
+// ── ARCHIVE ───────────────────────────────────────────────────
+function renderArchive(){
+  const done=S.projects.filter(p=>p.status==='הושלם'||p.cancelled);
+  const sel=S.md._archiveSel||null;
+  if(sel){
+    const p=done.find(x=>pid(x)===sel);
+    if(p)return renderArchiveDetail(p);
+  }
+  // KPIs
+  const completed=done.filter(p=>p.status==='הושלם');
+  const avgPlanDiff=completed.filter(p=>p.planStart&&p.planEnd&&p.actualPlanEnd)
+    .map(p=>diffD(p.planEnd,p.actualPlanEnd)).reduce((a,b)=>a+b,0)/Math.max(1,completed.filter(p=>p.actualPlanEnd).length);
+  const avgProdDiff=completed.filter(p=>p.prodStart&&p.prodEnd&&p.actualProdEnd)
+    .map(p=>diffD(p.prodEnd,p.actualProdEnd)).reduce((a,b)=>a+b,0)/Math.max(1,completed.filter(p=>p.actualProdEnd).length);
+  const onTime=completed.filter(p=>p.actualPlanEnd&&toD(p.actualPlanEnd)<=toD(p.planEnd)).length;
+
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <div><div class="page-title">ארכיון פרויקטים</div><div class="page-sub">${done.length} פרויקטים מוגמרים</div></div>
+    </div>
+    <div class="kpi-grid" style="margin-bottom:18px">
+      <div class="kpi green"><div class="kpi-v" style="color:#16a34a">${completed.length}</div><div class="kpi-l">הושלמו</div><div class="kpi-icon">✅</div></div>
+      <div class="kpi blue"><div class="kpi-v" style="color:#2563eb">${onTime}</div><div class="kpi-l">בזמן (תכנון)</div><div class="kpi-icon">⏱</div></div>
+      <div class="kpi ${avgPlanDiff>0?'red':'green'}"><div class="kpi-v" style="color:${avgPlanDiff>0?'#dc2626':'#16a34a'}">${Math.abs(Math.round(avgPlanDiff))}</div><div class="kpi-l">ממוצע חריגת תכנון (ימים)</div><div class="kpi-icon">📐</div></div>
+      <div class="kpi ${avgProdDiff>0?'red':'green'}"><div class="kpi-v" style="color:${avgProdDiff>0?'#dc2626':'#16a34a'}">${Math.abs(Math.round(avgProdDiff))}</div><div class="kpi-l">ממוצע חריגת ייצור (ימים)</div><div class="kpi-icon">🏭</div></div>
+    </div>
+    <div class="card" style="overflow-x:auto">
+    <table style="min-width:900px"><thead><tr>
+      <th>לקוח</th><th>הזמנה</th><th>סוכן</th><th>התקנה</th>
+      <th>חריגת תכנון</th><th>חריגת ייצור</th><th>בקרה</th><th>ציון</th>
+    </tr></thead>
+    <tbody>${done.length?done.map(p=>{
+      const ag=getUser(p.agentId);
+      const planDiff2=p.planEnd&&p.actualPlanEnd?diffD(p.planEnd,p.actualPlanEnd):null;
+      const prodDiff2=p.prodEnd&&p.actualProdEnd?diffD(p.prodEnd,p.actualProdEnd):null;
+      const followupDate=p.followupDate||( p.actualInstallDate?new Date(new Date(p.actualInstallDate).getTime()+60*24*3600*1000).toISOString():null);
+      const followupDone=p.followupDone||false;
+      const followupOverdue=followupDate&&!followupDone&&toD(followupDate)<TODAY;
+      // Score 0-100
+      let score=100;
+      if(planDiff2&&planDiff2>0)score-=Math.min(30,planDiff2*2);
+      if(prodDiff2&&prodDiff2>0)score-=Math.min(30,prodDiff2*2);
+      const procIssues=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived).length;
+      score-=procIssues*5;
+      score=Math.max(0,Math.round(score));
+      const scoreCol=score>=80?'#16a34a':score>=60?'#d97706':'#dc2626';
+      return`<tr class="row" onclick="S.md._archiveSel='${pid(p)}';render()">
+        <td style="font-weight:600">${p.client||'—'}</td>
+        <td class="mono" style="color:var(--t3)">${p.orderNum||'—'}</td>
+        <td style="font-size:12px">${ag?.name||'—'}</td>
+        <td class="mono">${fmtD(p.actualInstallDate||p.installDate)}</td>
+        <td>${planDiff2!==null?`<span class="diff-chip ${planDiff2>0?'diff-pos':planDiff2<0?'diff-neg':'diff-zero'}">${planDiff2>0?'+'+planDiff2:planDiff2} י'</span>`:'<span style="color:var(--t4)">—</span>'}</td>
+        <td>${prodDiff2!==null?`<span class="diff-chip ${prodDiff2>0?'diff-pos':prodDiff2<0?'diff-neg':'diff-zero'}">${prodDiff2>0?'+'+prodDiff2:prodDiff2} י'</span>`:'<span style="color:var(--t4)">—</span>'}</td>
+        <td>${followupDone
+          ?`<span class="bdg bg" style="font-size:10px">✓ בוצעה</span>`
+          :followupOverdue
+            ?`<span class="bdg br" style="font-size:10px">⚠ ${fmtD(followupDate)}</span>`
+            :followupDate
+              ?`<span class="bdg bam" style="font-size:10px">📅 ${fmtD(followupDate)}</span>`
+              :'<span style="color:var(--t4);font-size:11px">—</span>'
+        }</td>
+        <td><span style="font-weight:700;color:${scoreCol};font-family:'IBM Plex Mono',monospace">${score}</span></td>
+      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:28px;opacity:.4">📦</div><div style="color:var(--t3)">אין פרויקטים מוגמרים</div></td></tr>`}
+    </tbody></table></div>
+  </div>`;
+}
+
+function renderArchiveDetail(p){
+  const ag=getUser(p.agentId),eng=getUser(p.engineerId),pm2=getUser(p.prodManagerId);
+  const planDiff2=p.planEnd&&p.actualPlanEnd?diffD(p.planEnd,p.actualPlanEnd):null;
+  const prodDiff2=p.prodEnd&&p.actualProdEnd?diffD(p.prodEnd,p.actualProdEnd):null;
+  const planDays=p.planStart&&p.planEnd?diffD(p.planStart,p.planEnd):null;
+  const planActDays=p.planStart&&p.actualPlanEnd?diffD(p.planStart,p.actualPlanEnd):null;
+  const prodDays=p.prodStart&&p.prodEnd?diffD(p.prodStart,p.prodEnd):null;
+  const prodActDays=p.prodStart&&p.actualProdEnd?diffD(p.prodStart,p.actualProdEnd):null;
+  const followupDate=p.followupDate||(p.actualInstallDate?new Date(new Date(p.actualInstallDate).getTime()+60*24*3600*1000).toISOString():null);
+  const followupDone=p.followupDone||false;
+  const followupConfirm=S.md._followupConfirm||false;
+  const tasks=p.archiveTasks||[];
+
+  // Mini gantt bars
+  const allDates=[p.planStart,p.planEnd,p.prodStart,p.prodEnd,p.actualInstallDate||p.installDate].filter(Boolean);
+  const minD=toD(allDates.reduce((a,b)=>a<b?a:b));
+  const maxD=toD(allDates.reduce((a,b)=>a>b?a:b));
+  const totalDays2=maxD&&minD?Math.max(1,diffD(minD.toISOString(),maxD.toISOString())+7):1;
+  const barPct=(d,from)=>Math.max(0,Math.min(100,diffD(from.toISOString(),d)*100/totalDays2));
+  const barW=(d1,d2)=>Math.max(1,Math.min(100,diffD(d1,d2)*100/totalDays2));
+
+  const ganttRow=(label,start,end,color,actualEnd)=>{
+    if(!start)return'';
+    const l2=barPct(start,minD),w=barW(start,end||start);
+    const al=actualEnd?barPct(actualEnd,minD):null;
+    const aw=actualEnd&&start?barW(start,actualEnd):null;
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:80px;font-size:11px;color:var(--t3);text-align:left;flex-shrink:0">${label}</div>
+      <div style="flex:1;height:20px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible">
+        <div style="position:absolute;left:${l2}%;width:${w}%;height:100%;background:${color}44;border:1px solid ${color};border-radius:3px;min-width:3px"></div>
+        ${al!==null?`<div style="position:absolute;left:${al}%;width:${aw}%;height:100%;background:${color};border-radius:3px;opacity:.7;min-width:3px"></div>`:''}
+      </div>
+    </div>`;
+  };
+
+  return`<div class="main" style="max-width:100%">
+    <div class="page-hdr">
+      <button class="btn sec" onclick="S.md._archiveSel=null;render()">← חזור לארכיון</button>
+    </div>
+
+    <!-- Header card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:700">${p.client}</div>
+          <div style="color:var(--t3);font-size:13px">${p.projectName||''} · ${p.orderNum||''} · ${p.projectType||''}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${sbdg(p)}
+          ${p.cancelled?bdg('br','בוטל'):''}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        ${[['סוכן',ag?.name||'—'],['מתכנן',eng?.name||'—'],['מנהל ייצור',pm2?.name||'—'],['התקנה',fmtD(p.actualInstallDate||p.installDate)]].map(([l,v])=>`
+          <div style="background:var(--bg3);border-radius:var(--r8);padding:10px;border:1px solid var(--b)">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:3px">${l}</div>
+            <div style="font-weight:600;font-size:13px">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Performance card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:14px">📊 ביצועים מול תכנון</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">תכנון הנדסי</div>
+          <table style="width:100%;font-size:12px"><tbody>
+            <tr><td style="color:var(--t3);padding:3px 0">מתוכנן</td><td style="font-weight:600;text-align:left">${planDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">בפועל</td><td style="font-weight:600;text-align:left">${planActDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">חריגה</td><td style="text-align:left">${planDiff2!==null?`<span class="diff-chip ${planDiff2>0?'diff-pos':planDiff2<0?'diff-neg':'diff-zero'}">${planDiff2>0?'+'+planDiff2:planDiff2} ימים</span>`:'—'}</td></tr>
+          </tbody></table>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">ייצור</div>
+          <table style="width:100%;font-size:12px"><tbody>
+            <tr><td style="color:var(--t3);padding:3px 0">מתוכנן</td><td style="font-weight:600;text-align:left">${prodDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">בפועל</td><td style="font-weight:600;text-align:left">${prodActDays||'—'} ימים</td></tr>
+            <tr><td style="color:var(--t3);padding:3px 0">חריגה</td><td style="text-align:left">${prodDiff2!==null?`<span class="diff-chip ${prodDiff2>0?'diff-pos':prodDiff2<0?'diff-neg':'diff-zero'}">${prodDiff2>0?'+'+prodDiff2:prodDiff2} ימים</span>`:'—'}</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <!-- Mini Gantt -->
+      <div style="font-size:11px;color:var(--t3);margin-bottom:8px;font-weight:600">ציר זמן (כחול=מתוכנן, מלא=בפועל)</div>
+      ${ganttRow('תכנון',p.planStart,p.planEnd,'#2563eb',p.actualPlanEnd)}
+      ${ganttRow('ייצור',p.prodStart,p.prodEnd,'#d97706',p.actualProdEnd)}
+      ${ganttRow('התקנה',p.installDate,p.installDate,'#16a34a',p.actualInstallDate)}
+    </div>
+
+    <!-- Procurement card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">📦 רכש</div>
+      ${(p.procurement||[]).length===0?`<div style="color:var(--t3);font-size:12px">אין אביזרי רכש</div>`:''}
+      ${(p.procurement||[]).map(item=>{
+        const expDt=toD(item.expected),arrDt=toD(item.arrivedDate);
+        const delay=expDt&&arrDt?diffD(item.expected,item.arrivedDate):null;
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:var(--r6);margin-bottom:6px;border:1px solid var(--b)">
+          <div>
+            <span style="font-weight:600;font-size:12px">${item.name}</span>
+            ${item.ordered?`<span style="font-size:11px;color:var(--t3);margin-right:8px">הוזמן: ${fmtD(item.ordered)}</span>`:''}
+            ${item.expected?`<span style="font-size:11px;color:var(--t3)">אספקה: ${fmtD(item.expected)}</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${item.arrived?`<span class="bdg bg" style="font-size:10px">✓ הגיע ${fmtD(item.arrivedDate)}</span>`:`<span class="bdg br" style="font-size:10px">לא הגיע</span>`}
+            ${delay!==null?`<span class="diff-chip ${delay>0?'diff-pos':delay<0?'diff-neg':'diff-zero'}" style="font-size:10px">${delay>0?'+'+delay:delay} י'</span>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Follow-up card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">🔍 בקרה לאחר התקנה</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:3px">תאריך בקרה נדרש (חודשיים מהתקנה)</div>
+          <div style="font-weight:600;font-size:14px;color:${!followupDone&&followupDate&&toD(followupDate)<TODAY?'#dc2626':'var(--t)'}">${fmtD(followupDate)||'—'}</div>
+        </div>
+        <div>
+          ${followupDone
+            ?`<span class="bdg bg">✓ בוצעה ${fmtD(p.followupDoneDate)}</span>`
+            :!followupConfirm
+              ?`<button class="btn pri sm" onclick="S.md._followupConfirm=true;render()">✓ סמן בוצעה</button>`
+              :`<div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:12px">לאשר?</span>
+                  <button class="btn xs sec" onclick="S.md._followupConfirm=false;render()">לא</button>
+                  <button class="btn xs pri" onclick="doMarkFollowup('${pid(p)}')">✓ כן</button>
+                </div>`}
+        </div>
+        <button class="btn sm sec" onclick="doSendFollowupReminder('${pid(p)}')" style="margin-right:auto">📧 שלח תזכורת</button>
+      </div>
+      <div class="fld">
+        <label class="fl">תאריך בקרה מותאם אישית</label>
+        <input type="date" class="fi" style="max-width:200px" value="${toISO(p.followupDate||followupDate)}"
+          onchange="doUpDate('${pid(p)}','followupDate',this.value)">
+      </div>
+    </div>
+
+    <!-- Notes card -->
+    <div class="card" style="margin-bottom:14px;padding:20px">
+      <div class="card-hdr-title" style="margin-bottom:12px">📝 הערות ולקחים</div>
+      ${(p.notes||[]).slice().reverse().map(n=>`<div class="note"><div class="note-meta"><span class="note-user">${n.user}</span><span class="note-date">${fmtD(n.date)}</span></div><div class="note-text">${n.text}</div></div>`).join('')}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="fi" id="arch_note" placeholder="הוסף לקח / הערה..." style="flex:1">
+        <button class="btn pri" onclick="doArchiveNote('${pid(p)}')">הוסף</button>
+      </div>
+    </div>
+
+    <!-- Tasks card -->
+    <div class="card" style="padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-hdr-title">✅ משימות המשך</div>
+        <button class="btn sm pri" onclick="doAddArchiveTask('${pid(p)}')">+ משימה</button>
+      </div>
+      ${tasks.length===0?`<div style="color:var(--t3);font-size:12px;padding:8px 0">אין משימות — לחץ "+ משימה" להוספה</div>`:''}
+      ${tasks.map((task,ti)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:var(--r6);margin-bottom:6px;border:1px solid var(--b);flex-wrap:wrap">
+        <input type="checkbox" ${task.done?'checked':''} onchange="doToggleArchiveTask('${pid(p)}','${task.id}')" style="width:16px;height:16px;cursor:pointer;flex-shrink:0">
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:12px;font-weight:500;${task.done?'text-decoration:line-through;color:var(--t3)':''}">${task.text}</div>
+          ${task.due?`<div style="font-size:10px;color:${!task.done&&toD(task.due)<TODAY?'#dc2626':'var(--t3)'}">${fmtD(task.due)}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select class="fi" style="font-size:11px;padding:3px 6px;width:auto" onchange="doUpArchiveTask('${pid(p)}','${task.id}','assignee',this.value)">
+            <option value="">אחראי...</option>
+            ${S.users.map(u=>`<option value="${u.id}" ${task.assignee===u.id?'selected':''}>${u.name}</option>`).join('')}
+          </select>
+          <span class="bdg ${task.done?'bg':toD(task.due)&&toD(task.due)<TODAY?'br':'bam'}" style="font-size:9px">${task.done?'הושלם':toD(task.due)&&toD(task.due)<TODAY?'באיחור':'פתוח'}</span>
+          <button class="btn xs" style="color:#dc2626" onclick="doDelArchiveTask('${pid(p)}','${task.id}')">✕</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// Archive action functions
+async function doMarkFollowup(id){
+  upProj(id,{followupDone:true,followupDoneDate:new Date().toISOString()});
+  S.md._followupConfirm=false;
+  await logAction('add_note','בקרה לאחר התקנה בוצעה');
+  render();
+}
+async function doSendFollowupReminder(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const ag=getUser(p.agentId);
+  if(ag?.email){
+    await sendMail(ag.name,ag.email,'📅 תזכורת בקרה לאחר התקנה',
+      `שלום ${ag.name},\n\nנדרשת בקרת ביצועי מערכת אצל הלקוח ${p.client||''} (${p.orderNum||''}).\nתאריך נדרש: ${fmtD(p.followupDate||'')}\n\nאנא תאם ביקור בקרה עם הלקוח.`,
+      p.client||'');
+  }
+  alert('תזכורת נשלחה ל-'+ag?.name);
+}
+async function doArchiveNote(id){
+  const inp=document.getElementById('arch_note');
+  const txt=inp?.value?.trim();if(!txt)return;
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const note={user:cu()?.name||'',text:txt,date:new Date().toISOString()};
+  upProj(id,{notes:[...(p.notes||[]),note]});
+  if(inp)inp.value='';
+  await logAction('add_note',`${p.client||''} — לקח: ${txt.slice(0,40)}`);
+  render();
+}
+function doAddArchiveTask(id){
+  const text=prompt('תיאור המשימה:');if(!text)return;
+  const due=prompt('תאריך יעד (YYYY-MM-DD):');
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=[...(p.archiveTasks||[]),{id:'t'+Date.now(),text,due:due||'',assignee:'',done:false}];
+  upProj(id,{archiveTasks:tasks});render();
+}
+function doToggleArchiveTask(id,tid){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=(p.archiveTasks||[]).map(t=>t.id===tid?{...t,done:!t.done}:t);
+  upProj(id,{archiveTasks:tasks});render();
+}
+function doUpArchiveTask(id,tid,key,val){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const tasks=(p.archiveTasks||[]).map(t=>t.id===tid?{...t,[key]:val}:t);
+  upProj(id,{archiveTasks:tasks});
+}
+function doDelArchiveTask(id,tid){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  upProj(id,{archiveTasks:(p.archiveTasks||[]).filter(t=>t.id!==tid)});render();
+}
+
+// ── EXPOSE TO WINDOW ──────────────────────────────────────────
+const W={V,doLogin,doLogout,buildProcSummary,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+  setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
+Object.entries(W).forEach(([k,v])=>window[k]=v);
+// Expose S and render for inline handlers
+window.S=S;
+window.render=render;
+
+// ── AUTH STATE LISTENER ───────────────────────────────────────
+onAuthStateChanged(auth,async(firebaseUser)=>{
+  if(firebaseUser){
+    S.authUser=firebaseUser;
+    await fbLoadAll();
+    // Find matching user record by email or uid
+    let u=S.users.find(x=>x.id===firebaseUser.uid||x.email===firebaseUser.email);
+    if(!u){
+      // Auto-create user record for first admin
+      u={id:firebaseUser.uid,name:firebaseUser.displayName||firebaseUser.email,email:firebaseUser.email,roleId:'admin',active:true,isAgent:true,phone:'',notif:defNotif()};
+      S.users=[...S.users,u];
+      await fbSaveSettings();
+    }
+    S.currentUser=u;
+    S.loading=false;
+    render();
+    logAction('login');
+    // Run daily alerts check after data loads
+    setTimeout(()=>checkDailyAlerts(),2000);
+  }else{
+    S.authUser=null;S.currentUser=null;S.loading=false;
+    render();
+  }
+});
+</script>
+</body>
+</html>
