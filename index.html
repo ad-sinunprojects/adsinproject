@@ -439,7 +439,6 @@ select.fi{cursor:pointer}
   .main{padding:12px}
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 <div id="tt" class="tt"></div>
@@ -539,33 +538,42 @@ const sbdgP=p=>{
 
 
 
-// ── EMAILJS ───────────────────────────────────────────────────
-const EJS_SVC  = 'service_5mlt8fh';
-const EJS_TPL  = 'template_ctyugdk';
-const EJS_KEY  = '9GfdXjaIbE64CI40D';
+// ── BREVO EMAIL ───────────────────────────────────────────────
+// API Key נטען מ-Firebase (settings/main.brevoKey) — לא נחשף בקוד
+let BREVO_API_KEY = '';
+const BREVO_SENDER = 'mickey@sinun.co.il';
 
-function ejsInit(){
-  if(window.emailjs)window.emailjs.init({publicKey:EJS_KEY});
-}
-setTimeout(ejsInit,1000);
-
-// Send notification to a single recipient
 async function sendMail(toName,toEmail,notifType,message,projectName){
-  if(!window.emailjs){console.warn('EmailJS not loaded');return;}
+  // Load key from Firebase settings if not loaded yet
+  if(!BREVO_API_KEY&&S.settings?.brevoKey) BREVO_API_KEY=S.settings.brevoKey;
+  if(!BREVO_API_KEY){
+    console.warn('Brevo API Key לא הוגדר — הגדר ב-ניהול ← הגדרות');return;
+  }
   try{
-    await window.emailjs.send(EJS_SVC,EJS_TPL,{
-      to_name:toName,
-      to_email:toEmail,
-      notification_type:notifType,
-      message,
-      project_name:projectName||'',
-      date:new Date().toLocaleDateString('he-IL'),
-      name:'ProjectFlow',
-      email:'noreply@projectflow',
+    const body={
+      sender:{name:'ProjectFlow',email:BREVO_SENDER},
+      to:[{email:toEmail,name:toName}],
+      subject:'ProjectFlow — '+notifType,
+      htmlContent:`<div dir="rtl" style="font-family:Arial,sans-serif;font-size:14px;color:#1a1d2e;max-width:600px;margin:0 auto">
+        <div style="background:#2d5be3;color:#fff;padding:16px 24px;border-radius:8px 8px 0 0">
+          <strong style="font-size:16px">ProjectFlow</strong>
+        </div>
+        <div style="background:#f7f8fc;padding:24px;border:1px solid #dde1ec;border-top:none;border-radius:0 0 8px 8px">
+          <p>שלום <strong>${toName}</strong>,</p>
+          <div style="background:#fff;border-right:4px solid #2d5be3;padding:12px 16px;border-radius:4px;margin:16px 0;white-space:pre-line">${message}</div>
+          <p style="color:#8891aa;font-size:12px">פרויקט: ${projectName||''}<br>תאריך: ${new Date().toLocaleDateString('he-IL')}</p>
+        </div>
+      </div>`,
+    };
+    const res=await fetch('https://api.brevo.com/v3/smtp/email',{
+      method:'POST',
+      headers:{'api-key':BREVO_API_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify(body),
     });
-    console.log('Mail sent to',toEmail);
+    if(res.ok){console.log('Mail sent to',toEmail);}
+    else{const err=await res.json();console.error('Brevo error:',err);}
   }catch(e){
-    console.error('EmailJS error:',e);
+    console.error('Brevo error:',e);
   }
 }
 
@@ -718,6 +726,8 @@ async function fbLoadAll(){
       const d=settSnap.data();
       if(d.users)try{const u=JSON.parse(d.users);if(Array.isArray(u)&&u.length>0)S.users=u;}catch(e){}
       if(d.pmaster)try{const pm=JSON.parse(d.pmaster);if(Array.isArray(pm))S.pmaster=pm;}catch(e){}
+      // Load Brevo key securely from Firebase
+      if(d.brevoKey){S.settings=S.settings||{};S.settings.brevoKey=d.brevoKey;BREVO_API_KEY=d.brevoKey;}
     }
   }catch(e){console.error('fbLoadAll',e);}
   // Sync status for existing projects based on actual dates
@@ -2942,8 +2952,35 @@ function doDelArchiveTask(id,tid){
   upProj(id,{archiveTasks:(p.archiveTasks||[]).filter(t=>t.id!==tid)});render();
 }
 
+
+async function saveBrevoKey(){
+  const key=document.getElementById('brevo_key_inp')?.value?.trim();
+  if(!key){alert('נא להכניס API Key');return;}
+  try{
+    await setDoc(doc(db,'settings','main'),{brevoKey:key},{merge:true});
+    S.settings=S.settings||{};
+    S.settings.brevoKey=key;
+    BREVO_API_KEY=key;
+    await logAction('add_note','Brevo API Key עודכן');
+    alert('✓ API Key נשמר ב-Firebase');
+  }catch(e){
+    alert('שגיאה בשמירה: '+e.message);
+  }
+}
+
+async function testBrevoKey(){
+  const key=document.getElementById('brevo_key_inp')?.value?.trim();
+  if(!key){alert('נא להכניס API Key קודם');return;}
+  const oldKey=BREVO_API_KEY;
+  BREVO_API_KEY=key;
+  await sendMail(cu()?.name||'בדיקה', cu()?.email||'mickey@sinun.co.il',
+    '🧪 בדיקת מייל','זהו מייל בדיקה מ-ProjectFlow. אם קיבלת אותו — הכל עובד!','בדיקה');
+  BREVO_API_KEY=oldKey;
+  alert('נשלח! בדוק את תיבת הדואר שלך');
+}
+
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,buildProcSummary,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+const W={V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
   setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
 Object.entries(W).forEach(([k,v])=>window[k]=v);
 // Expose S and render for inline handlers
