@@ -895,7 +895,7 @@ function renderDash(){
       <tbody>${act.length?act.map(p=>{
         const eng=getUser(p.engineerId),ag=getUser(p.agentId);
         const ao=allOrdered(p);
-        const procStatusHtml=ao===null
+        const procStatus=ao===null
           ?`<span style="color:var(--t4);font-size:16px">—</span>`
           :ao
             ?`<span class="bdg bg" style="font-size:29px">✓ הוזמן</span>`
