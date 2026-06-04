@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ProjectFlow — מערכת ניהול פרויקטים</title>
+<link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
@@ -82,7 +83,7 @@ textarea{resize:vertical}
 /* ── PAGE HEADER ── */
 .page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .page-title{font-size:17px;font-weight:700;color:#f8fafc;letter-spacing:-.4px}
-.page-sub{font-size:28px;color:var(--t3);margin-top:2px}
+.page-sub{font-size:13px;color:var(--t3);margin-top:2px}
 
 /* ── CARD ── */
 .card{
@@ -131,7 +132,7 @@ th{
   background:rgba(255,255,255,.02);
   white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;
 }
-td{padding:11px 14px;border-bottom:1px solid rgba(30,58,95,.4);font-size:28px;vertical-align:middle}
+td{padding:11px 14px;border-bottom:1px solid rgba(30,58,95,.4);font-size:13px;vertical-align:middle}
 tr.row{cursor:pointer;transition:background .1s}
 tr.row:hover td{background:rgba(37,99,235,.06)}
 tr.row:last-child td{border-bottom:none}
@@ -209,7 +210,7 @@ tr.row:last-child td{border-bottom:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{
   padding:10px 14px;border:none;background:transparent;
-  color:var(--t3);font-size:28px;font-weight:500;
+  color:var(--t3);font-size:13px;font-weight:500;
   border-bottom:2px solid transparent;cursor:pointer;
   margin-bottom:-1px;white-space:nowrap;transition:all .15s;
 }
@@ -247,7 +248,7 @@ select.fi{cursor:pointer}
 /* ── ALERTS ── */
 .alert{
   padding:10px 14px;border-radius:var(--r8);
-  font-size:28px;margin-bottom:12px;
+  font-size:13px;margin-bottom:12px;
   border:1px solid;display:flex;align-items:flex-start;gap:8px;
   line-height:1.5;
 }
@@ -267,7 +268,7 @@ select.fi{cursor:pointer}
 /* ── PIN ── */
 .pin{
   width:48px;height:52px;text-align:center;
-  font-size:28px;font-weight:700;
+  font-size:12px;font-weight:700;
   border:1.5px solid var(--b);border-radius:var(--r8);
   background:var(--bg3);color:var(--t);outline:none;
   transition:border-color .15s,box-shadow .15s;
@@ -297,8 +298,8 @@ select.fi{cursor:pointer}
 .tick{position:absolute;top:0;bottom:0;border-left:1px solid rgba(30,58,95,.5);display:flex;align-items:center;padding-right:5px;overflow:hidden}
 .tlbl{font-size:11px;font-weight:600;color:var(--t3);font-family:'IBM Plex Mono',monospace;white-space:nowrap}
 .diam{width:12px;height:12px;border-radius:2px;transform:rotate(45deg) translateX(-50%);position:absolute;top:50%;margin-top:-6px;z-index:4;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.3)}
-.pdot{width:18px;height:18px;border-radius:50%;position:absolute;top:50%;transform:translate(-50%,-50%);z-index:4;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;font-weight:700;border:2px solid;box-shadow:0 2px 4px rgba(0,0,0,.3)}
-.plbl{position:absolute;font-size:26px;color:var(--t2);white-space:nowrap;background:rgba(10,22,40,.9);padding:2px 5px;border-radius:var(--r4);pointer-events:none;z-index:3;line-height:1.3;text-align:center;top:calc(50% + 12px);transform:translateX(-50%);border:1px solid var(--b)}
+.pdot{width:18px;height:18px;border-radius:50%;position:absolute;top:50%;transform:translate(-50%,-50%);z-index:4;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;border:2px solid;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.plbl{position:absolute;font-size:10px;color:var(--t2);white-space:nowrap;background:rgba(10,22,40,.9);padding:2px 5px;border-radius:var(--r4);pointer-events:none;z-index:3;line-height:1.3;text-align:center;top:calc(50% + 12px);transform:translateX(-50%);border:1px solid var(--b)}
 .gftr{padding:10px 14px;border-top:1px solid var(--b3);display:flex;gap:16px;background:rgba(255,255,255,.02);flex-wrap:wrap}
 
 /* ── NOTES ── */
@@ -313,7 +314,7 @@ select.fi{cursor:pointer}
 .note-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .note-user{font-size:11px;font-weight:700;color:#60a5fa}
 .note-date{font-size:11px;color:var(--t4)}
-.note-text{font-size:28px;line-height:1.5;color:var(--t2)}
+.note-text{font-size:13px;line-height:1.5;color:var(--t2)}
 
 /* ── PROC CARD ── */
 .pcard{
@@ -348,7 +349,7 @@ select.fi{cursor:pointer}
 .step-dot{
   width:32px;height:32px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-size:28px;font-weight:700;flex-shrink:0;border:2px solid;
+  font-size:14px;font-weight:700;flex-shrink:0;border:2px solid;
   transition:all .2s;
 }
 
@@ -357,7 +358,7 @@ select.fi{cursor:pointer}
   display:flex;align-items:center;gap:6px;
   padding:5px 10px 5px 6px;
   border:1px solid var(--b);border-radius:24px;
-  cursor:pointer;font-size:28px;color:var(--t3);
+  cursor:pointer;font-size:13px;color:var(--t3);
   background:rgba(255,255,255,.03);
   transition:all .15s;white-space:nowrap;
 }
@@ -381,7 +382,7 @@ select.fi{cursor:pointer}
   padding:12px 14px;
   box-shadow:0 8px 32px rgba(0,0,0,.5);
   min-width:180px;max-width:280px;
-  font-size:28px;line-height:1.5;
+  font-size:12px;line-height:1.5;
   color:var(--t);
   opacity:0;transition:opacity .12s;
   backdrop-filter:blur(8px);
@@ -532,7 +533,7 @@ const sbdgP=p=>{
   const eff=computeAutoStatus(p);
   const wd=waitingDays({...p,status:eff});
   const isWaiting=eff?.startsWith('ממתין');
-  const wdChip=isWaiting&&wd&&wd>0?`<span style="font-size:26px;color:#fbbf24;margin-right:4px">⏳${wd}י</span>`:'';
+  const wdChip=isWaiting&&wd&&wd>0?`<span style="font-size:11px;color:#fbbf24;margin-right:4px">⏳${wd}י</span>`:'';
   return`<div>${wdChip}${bdg(SMAP[eff]||'by',eff||'—')}<div class="pbar"><div class="pbar-fill" style="width:${statPct(eff)}%;background:${statCol(eff)}"></div></div></div>`;
 };
 
@@ -866,19 +867,19 @@ function renderDash(){
     <!-- Filters bar -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r10)">
       <span style="font-size:16px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0">סינון:</span>
-      <select class="fi" style="flex:1;min-width:130px;font-size:28px;padding:6px 10px"
+      <select class="fi" style="flex:1;min-width:130px;font-size:12px;padding:6px 10px"
         onchange="setDashFilter('status',this.value)">
         <option value="all" ${df.status==='all'?'selected':''}>כל הסטטוסים</option>
         ${STATS.map(s=>`<option value="${s}" ${df.status===s?'selected':''}>${s}</option>`).join('')}
       </select>
       <div style="flex:2;min-width:160px;position:relative">
-        <span style="position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:29px">🔍</span>
-        <input id="dash_search" class="fi" style="padding-right:30px;font-size:28px"
+        <span style="position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:11px">🔍</span>
+        <input id="dash_search" class="fi" style="padding-right:30px;font-size:12px"
           placeholder="סינון לפי לקוח..."
           value="${df.client||''}"
           oninput="setDashFilter('client',this.value)">
       </div>
-      <select class="fi" style="flex:1;min-width:130px;font-size:28px;padding:6px 10px"
+      <select class="fi" style="flex:1;min-width:130px;font-size:12px;padding:6px 10px"
         onchange="setDashFilter('agent',this.value)">
         <option value="all" ${df.agent==='all'?'selected':''}>כל הסוכנים</option>
         ${agents().map(u=>`<option value="${u.id}" ${df.agent===u.id?'selected':''}>${u.name}</option>`).join('')}
@@ -924,7 +925,7 @@ function renderDash(){
           <td class="mono" style="${barSt(p,'production')==='overdue'?'color:#f87171':'color:var(--t)'}">${fmtD(p.prodEnd)}</td>
           <td class="mono" style="color:#10b981;font-weight:600">${fmtD(p.installDate)}</td>
           <td>${procStatusHtml}</td>
-        </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📋</div><div style="color:var(--t3);font-size:29px">אין פרויקטים פעילים</div><div style="color:var(--t4);font-size:16px;margin-top:4px">לחץ "פרויקט חדש" כדי להתחיל</div></td></tr>`}
+        </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📋</div><div style="color:var(--t3);font-size:11px">אין פרויקטים פעילים</div><div style="color:var(--t4);font-size:16px;margin-top:4px">לחץ "פרויקט חדש" כדי להתחיל</div></td></tr>`}
       </tbody></table>
       </div>
     </div>
@@ -959,17 +960,17 @@ function renderProjects(){
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 16px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r10)">
       <div style="flex:2;min-width:200px;position:relative">
         <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none">🔍</span>
-        <input id="proj_search" class="fi" style="padding-right:32px;font-size:28px"
+        <input id="proj_search" class="fi" style="padding-right:32px;font-size:12px"
           placeholder="חיפוש לפי לקוח / הזמנה / סוכן..."
           value="${pf.search||''}"
           oninput="setProjFilter('search',this.value)">
       </div>
-      <select class="fi" style="flex:1;min-width:140px;font-size:28px;padding:6px 10px"
+      <select class="fi" style="flex:1;min-width:140px;font-size:12px;padding:6px 10px"
         onchange="setProjFilter('status',this.value)">
         <option value="all" ${pf.status==='all'?'selected':''}>כל הסטטוסים</option>
         ${STATS.map(s=>`<option value="${s}" ${pf.status===s?'selected':''}>${s}</option>`).join('')}
       </select>
-      <select class="fi" style="flex:1;min-width:140px;font-size:28px;padding:6px 10px"
+      <select class="fi" style="flex:1;min-width:140px;font-size:12px;padding:6px 10px"
         onchange="setProjFilter('agent',this.value)">
         <option value="all" ${pf.agent==='all'?'selected':''}>כל הסוכנים</option>
         ${agents().map(u=>`<option value="${u.id}" ${pf.agent===u.id?'selected':''}>${u.name}</option>`).join('')}
@@ -1002,7 +1003,7 @@ function renderProjects(){
         <td>${p.approved?bdg('bg','✓'):bdg('bam','ממתין')}</td>
       </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px">
         <div style="font-size:32px;margin-bottom:10px;opacity:.4">🔍</div>
-        <div style="color:var(--t3);font-size:29px">${hasFilter?'אין תוצאות לחיפוש זה':'אין פרויקטים'}</div>
+        <div style="color:var(--t3);font-size:11px">${hasFilter?'אין תוצאות לחיפוש זה':'אין פרויקטים'}</div>
         ${hasFilter?`<button class="btn sm sec" style="margin-top:10px" onclick="clearProjFilter()">נקה חיפוש</button>`:''}
       </td></tr>`}
     </tbody></table></div>
@@ -1153,7 +1154,7 @@ function renderGantt(){
     </div>
     <div class="card" style="overflow:hidden;width:100%;max-width:none">
       <div class="ghdr"><div class="glc">פרויקט · מתכנן</div><div class="gtc">${ticks}${tiv?`<div class="tline" style="left:${tp}%"></div>`:''}</div><div class="gdc">תאריכים</div></div>
-      ${rows||`<div style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📅</div><div style="color:var(--t3);font-size:29px">אין פרויקטים להצגה</div></div>`}
+      ${rows||`<div style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px;opacity:.4">📅</div><div style="color:var(--t3);font-size:11px">אין פרויקטים להצגה</div></div>`}
       <div class="gftr">${[['פרויקטים',fil.length,'#94a3b8'],['פעילים',fil.filter(p=>p.status!=='הושלם').length,'#3b82f6'],['חריגות',fil.filter(p=>barSt(p,'planning')==='overdue').length,'#dc2626'],['הושלמו',fil.filter(p=>p.status==='הושלם').length,'#16a34a']].map(([l,v,c])=>`<div style="display:flex;align-items:center;gap:5px;font-size:16px"><span style="color:#475569;font-size:11px">${l}:</span><span style="font-weight:700;color:${c};font-family:'IBM Plex Mono',monospace;font-size:12px">${v}</span></div>`).join('')}</div>
     </div>
   </div>`;
@@ -1190,8 +1191,8 @@ function renderMilestones(){
           ${isBottleneck?`<span class="bdg bam" style="font-size:10px">רכש</span>`:''}
         </div>
         ${actual
-          ?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:26px;color:var(--t3)">בפועל:</span><span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#86efac">${fmtD(actual)}</span></div>`
-          :overdue?`<div style="font-size:26px;color:#fca5a5">⚠ חרג</div>`:''}
+          ?`<div style="display:flex;align-items:center;gap:4px"><span style="font-size:11px;color:var(--t3)">בפועל:</span><span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#86efac">${fmtD(actual)}</span></div>`
+          :overdue?`<div style="font-size:11px;color:#fca5a5">⚠ חרג</div>`:''}
       </div>
     </td>`;
   };
@@ -1227,12 +1228,12 @@ function renderMilestones(){
             <div style="font-size:16px;font-weight:500;color:${bnAfterInstall?'#fca5a5':'var(--t2)'}">${bottleneck.name}</div>
             <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
               <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:${bnAfterInstall?'#fca5a5':'var(--t3)'}">${fmtD(bottleneck.expected)}</span>
-              ${bnAfterInstall?`<span class="bdg br" style="font-size:26px">⚠ אחרי התקנה</span>`:''}
+              ${bnAfterInstall?`<span class="bdg br" style="font-size:11px">⚠ אחרי התקנה</span>`:''}
             </div>
           </div>`:`<span style="color:var(--t3);font-size:16px">—</span>`}
         </td>
         ${msCell(p.installDate,p.status==='הושלם'?p.installDate:null,false)}
-      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">🎯</div><div style="color:var(--t3);font-size:29px">אין פרויקטים פעילים</div></td></tr>`}
+      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:10px;opacity:.4">🎯</div><div style="color:var(--t3);font-size:11px">אין פרויקטים פעילים</div></td></tr>`}
     </tbody></table></div>
   </div>`;
 }
@@ -1290,8 +1291,8 @@ function renderApproval(){
             <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
               ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`
                 <div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33">
-                  <div style="font-size:29px;color:var(--t3);margin-bottom:3px">${l}</div>
-                  <div style="font-weight:600;color:${c};font-size:28px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div>
+                  <div style="font-size:11px;color:var(--t3);margin-bottom:3px">${l}</div>
+                  <div style="font-weight:600;color:${c};font-size:12px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div>
                 </div>`).join('')}
             </div>
           </div>`:''}
@@ -1342,7 +1343,7 @@ function renderAdmin(){
   let tc='';
   if(S.at==='users'){
     tc=`<div style="display:flex;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:28px;color:var(--t3)">${S.users.length} משתמשים</div>
+      <div style="font-size:12px;color:var(--t3)">${S.users.length} משתמשים</div>
       <button class="btn pri sm" onclick="openAU()">+ משתמש</button></div>
     <table><thead><tr><th>שם</th><th>תפקיד</th><th>אימייל</th><th>נייד</th><th>סוכן</th><th>סטטוס</th><th></th></tr></thead>
     <tbody>${S.users.map(u=>`<tr>
@@ -1360,52 +1361,19 @@ function renderAdmin(){
   }else if(S.at==='notifications'){
     const keys=Object.keys(NKEYS);
     tc=`<div style="overflow-x:auto"><table style="min-width:600px">
-      <thead><tr><th>משתמש</th>${keys.map(k=>`<th style="text-align:center;font-size:29px;white-space:normal;max-width:80px">${NKEYS[k]}</th>`).join('')}</tr></thead>
+      <thead><tr><th>משתמש</th>${keys.map(k=>`<th style="text-align:center;font-size:11px;white-space:normal;max-width:80px">${NKEYS[k]}</th>`).join('')}</tr></thead>
       <tbody>${S.users.map(u=>`<tr><td>${av(u,22)} ${u.name}</td>
         ${keys.map(k=>`<td style="text-align:center"><label class="tog"><input type="checkbox" ${(u.notif||{})[k]?'checked':''} onchange="doTogNotif('${u.id}','${k}',this.checked)"><span class="tog-sl"></span></label></td>`).join('')}
       </tr>`).join('')}</tbody>
     </table></div>`;
   }else if(S.at==='procItems'){
     tc=`<div style="display:flex;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:28px;color:var(--t3)">רשימת האביזרים הזמינה</div>
+      <div style="font-size:12px;color:var(--t3)">רשימת האביזרים הזמינה</div>
       <button class="btn pri sm" onclick="doAddPM()">+ אביזר</button></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${S.pmaster.map((item,i)=>`<div style="display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid var(--b);border-radius:6px;padding:5px 10px;font-size:28px">${item}<button onclick="doRmPM(${i})" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:28px;line-height:1">×</button></div>`).join('')}
+      ${S.pmaster.map((item,i)=>`<div style="display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid var(--b);border-radius:6px;padding:5px 10px;font-size:12px">${item}<button onclick="doRmPM(${i})" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;line-height:1">×</button></div>`).join('')}
     </div>`;
-  }else{
-    // AUDIT LOG TAB
-    const logs=S.auditLogs||[];
-    const allUsers=[...new Set(logs.map(l=>l.userName).filter(Boolean))];
-    const filtered=S.logFilter==='all'?logs:logs.filter(l=>l.userId===S.logFilter||l.userName===S.logFilter);
-    tc=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div style="font-size:28px;color:var(--t3)">${filtered.length} פעולות</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select class="fi" style="width:auto;padding:4px 8px;font-size:16px" onchange="V('logFilter',this.value)">
-          <option value="all">כל המשתמשים</option>
-          ${S.users.map(u=>`<option value="${u.id}"${S.logFilter===u.id?' selected':''}>${u.name}</option>`).join('')}
-        </select>
-        <button class="btn sm" onclick="loadAuditLogs().then(render)">🔄 רענן</button>
-      </div>
-    </div>
-    ${filtered.length?filtered.slice(0,50).map(l=>{
-      const icon=LOG_ICONS[l.type]||'📌',label=LOG_LABELS[l.type]||l.type;
-      const u=S.users.find(x=>x.id===l.userId);
-      const rc=getRole(u?.roleId).color;
-      return`<div class="log-row">
-        <div class="log-icon" style="background:${rc}18;color:${rc};border:1px solid ${rc}30">${icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
-            <div style="min-width:0">
-              <span style="font-weight:600;color:var(--t)">${l.userName||'—'}</span>
-              <span class="bdg by" style="font-size:26px;margin-right:5px;margin-left:4px">${getRole(u?.roleId).name}</span>
-              <span style="color:var(--t2)"> — ${label}</span>
-              ${l.detail?`<div style="font-size:16px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.detail}</div>`:''}
-            </div>
-            <div style="font-size:29px;color:var(--t4);white-space:nowrap;font-family:'IBM Plex Mono',monospace;flex-shrink:0">${fmtTS(l.ts)}</div>
-          </div>
-        </div>
-      </div>`;}).join(''):`<div style="text-align:center;color:#475569;padding:32px">אין פעולות להצגה</div>`}`;
-  if(S.at==='settings'){
+  }else if(S.at==='settings'){
     const brevoStatus=S.settings?.brevoKey
       ?'<span style="color:#16a34a;font-size:12px;font-weight:600">&#10003; API Key מוגדר</span>'
       :'<span style="color:#dc2626;font-size:12px;font-weight:600">&#9888; API Key לא מוגדר</span>';
@@ -1433,6 +1401,39 @@ function renderAdmin(){
         <div style="margin-top:8px">${brevoStatus}</div>
       </div>
     </div>`;
+  }else{
+    // AUDIT LOG TAB
+    const logs=S.auditLogs||[];
+    const allUsers=[...new Set(logs.map(l=>l.userName).filter(Boolean))];
+    const filtered=S.logFilter==='all'?logs:logs.filter(l=>l.userId===S.logFilter||l.userName===S.logFilter);
+    tc=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:12px;color:var(--t3)">${filtered.length} פעולות</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fi" style="width:auto;padding:4px 8px;font-size:12px" onchange="V('logFilter',this.value)">
+          <option value="all">כל המשתמשים</option>
+          ${S.users.map(u=>`<option value="${u.id}"${S.logFilter===u.id?' selected':''}>${u.name}</option>`).join('')}
+        </select>
+        <button class="btn sm" onclick="loadAuditLogs().then(render)">🔄 רענן</button>
+      </div>
+    </div>
+    ${filtered.length?filtered.slice(0,50).map(l=>{
+      const icon=LOG_ICONS[l.type]||'📌',label=LOG_LABELS[l.type]||l.type;
+      const u=S.users.find(x=>x.id===l.userId);
+      const rc=getRole(u?.roleId).color;
+      return`<div class="log-row">
+        <div class="log-icon" style="background:${rc}18;color:${rc};border:1px solid ${rc}30">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+            <div style="min-width:0">
+              <span style="font-weight:600;color:var(--t)">${l.userName||'—'}</span>
+              <span class="bdg by" style="font-size:11px;margin-right:5px;margin-left:4px">${getRole(u?.roleId).name}</span>
+              <span style="color:var(--t2)"> — ${label}</span>
+              ${l.detail?`<div style="font-size:11px;color:var(--t3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.detail}</div>`:''}
+            </div>
+            <div style="font-size:11px;color:var(--t4);white-space:nowrap;font-family:'IBM Plex Mono',monospace;flex-shrink:0">${fmtTS(l.ts)}</div>
+          </div>
+        </div>
+      </div>`;}).join(''):`<div style="text-align:center;color:#475569;padding:32px">אין פעולות להצגה</div>`}`;
   }
   return`<div class="main">
     <div class="page-hdr"><div class="page-title">🔒 ניהול מערכת</div><button class="btn sm" onclick="S.adminOK=false;render()">נעל</button></div>
@@ -1565,7 +1566,7 @@ function renderPD(){
       <div class="fld">
         <label class="fl">בוצע בפועל</label>
         <input type="date" class="fi" value="${toISO(p.actualInstallDate)}" onchange="doUpDate('${pid(p)}','actualInstallDate',this.value)">
-        ${p.actualInstallDate?`<div style="font-size:29px;color:#4ade80;margin-top:3px">✓ התקנה בוצעה</div>`:''}
+        ${p.actualInstallDate?`<div style="font-size:11px;color:#4ade80;margin-top:3px">✓ התקנה בוצעה</div>`:''}
       </div>
     </div>
     ${!p.actualInstallDate?(!installConfirm
@@ -1585,9 +1586,9 @@ function renderPD(){
         const isWaiting=effStatus?.startsWith('ממתין');
         return isWaiting
           ?`<div style="display:flex;align-items:center;gap:8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:var(--r8);padding:8px 14px">
-              <span style="font-size:29px">⏳</span>
-              <div><div style="font-size:28px;color:#fbbf24;font-weight:600">ממתין ${wd} ימים</div>
-              <div style="font-size:29px;color:var(--t3)">${effStatus}</div></div>
+              <span style="font-size:11px">⏳</span>
+              <div><div style="font-size:12px;color:#fbbf24;font-weight:600">ממתין ${wd} ימים</div>
+              <div style="font-size:11px;color:var(--t3)">${effStatus}</div></div>
             </div>`
           :'';
       })()}
@@ -1605,7 +1606,7 @@ function renderPD(){
       return`<div class="pcard" style="background:${dc[ds]};border-color:${bc[ds]};opacity:${item.cancelled?.55:1}">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-weight:700;font-size:29px">${item.name||'—'}</span>
+            <span style="font-weight:700;font-size:11px">${item.name||'—'}</span>
             ${item.arrived?bdg('bg','✓ הגיע '+fmtS(item.arrivedDate)):item.cancelled?bdg('by','בוטל'):ds==='late'?bdg('br','⚠ באיחור'):bdg('bam','ממתין')}
           </div>
           ${!item.cancelled&&!item.arrived?`<div style="display:flex;gap:6px">
@@ -1650,8 +1651,8 @@ function renderPD(){
       <div style="padding:12px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:2px;overflow-x:auto;flex-shrink:0">
         ${ms.map((m,i,arr)=>`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px">
           <div style="width:24px;height:24px;border-radius:50%;background:${m.ok?'#16a34a':m.ov?'#dc2626':'#1e293b'};display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid ${m.ok?'#15803d':m.ov?'#b91c1c':'var(--b)'};color:${m.ok||m.ov?'#fff':'#64748b'}">${m.ok?'✓':m.ov?'!':'○'}</div>
-          <div style="font-size:26px;color:var(--t3);text-align:center;max-width:50px;line-height:1.2">${m.l}</div>
-          <div style="font-size:26px;color:${m.ov?'#fca5a5':'#64748b'};font-family:'IBM Plex Mono',monospace">${fmtS(m.d)}</div>
+          <div style="font-size:11px;color:var(--t3);text-align:center;max-width:50px;line-height:1.2">${m.l}</div>
+          <div style="font-size:11px;color:${m.ov?'#fca5a5':'#64748b'};font-family:'IBM Plex Mono',monospace">${fmtS(m.d)}</div>
         </div>${i<arr.length-1?`<div style="width:20px;height:2px;background:var(--b);margin:0 2px;margin-bottom:22px"></div>`:''}</div>`).join('')}
       </div>
       <div class="tabs">${tabs.map(t=>`<button class="tab${S.mt===t.k?' act':''}" onclick="V('mt','${t.k}')">${t.l}</button>`).join('')}</div>
@@ -1677,7 +1678,7 @@ function renderNP(){
     con=`${f._parsed?`<div class="alert aok" style="margin-bottom:12px">✓ נקרא: <strong>${f._parsed}</strong></div>`:''}
     <div class="upz" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event);this.classList.remove('drag')" onclick="document.getElementById('exi').click()">
       <div style="font-size:30px;margin-bottom:8px">📂</div>
-      <div style="font-size:29px;color:var(--t2)">גרור קובץ Excel תמחור לכאן</div>
+      <div style="font-size:11px;color:var(--t2)">גרור קובץ Excel תמחור לכאן</div>
       <div style="font-size:16px;color:var(--t3);margin-top:4px">או לחץ לבחירת קובץ</div>
       <input type="file" id="exi" accept=".xlsx,.xls" style="display:none" onchange="hFU(this)">
     </div>
@@ -1696,9 +1697,9 @@ function renderNP(){
         <select ${fi('engineerId')} onchange="hEngChange(this.value)"><option value="">בחר...</option>${engs().map(u=>`<option value="${u.id}"${f.engineerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select>${err('engineerId')}</div>
       <div class="fld"><label class="fl">מנהל ייצור *</label>
         <select ${fi('prodManagerId')}><option value="">בחר...</option>${prods().map(u=>`<option value="${u.id}"${f.prodManagerId===u.id?' selected':''}>${u.name}</option>`).join('')}</select>${err('prodManagerId')}</div>
-      <div class="fld"><label class="fl">שעות תכנון * ${f.planHours&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('planHours')} value="${f.planHours||''}">${err('planHours')}</div>
-      <div class="fld"><label class="fl">שעות ייצור * ${f.prodHours&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('prodHours')} value="${f.prodHours||''}">${err('prodHours')}</div>
-      <div class="fld"><label class="fl">ימי התקנה ${f.installDays&&f._parseResult?'<span style="font-size:26px;color:#4ade80">← קובץ</span>':''}</label>
+      <div class="fld"><label class="fl">שעות תכנון * ${f.planHours&&f._parseResult?'<span style="font-size:11px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('planHours')} value="${f.planHours||''}">${err('planHours')}</div>
+      <div class="fld"><label class="fl">שעות ייצור * ${f.prodHours&&f._parseResult?'<span style="font-size:11px;color:#4ade80">← קובץ</span>':''}</label><input type="number" min="1" ${fi('prodHours')} value="${f.prodHours||''}">${err('prodHours')}</div>
+      <div class="fld"><label class="fl">ימי התקנה ${f.installDays&&f._parseResult?'<span style="font-size:11px;color:#4ade80">← קובץ</span>':''}</label>
         <div style="display:flex;gap:8px;align-items:flex-end">
           <div style="flex:1"><input type="number" min="1" class="fi" id="installDays" value="${f.installDays||''}" placeholder="ימי עבודה"></div>
           <div style="display:flex;flex-direction:column;gap:3px">
@@ -1706,7 +1707,7 @@ function renderNP(){
             <input type="number" min="1" max="10" class="fi" id="installWorkersPerDay" value="${f.installWorkersPerDay||2}" style="width:70px" onchange="recalcInstallDays(this.value)">
           </div>
         </div>
-        ${f._installWorkerDays?`<div style="font-size:29px;color:var(--t3);margin-top:3px">סה"כ ימי-עובד מהקובץ: ${f._installWorkerDays} ÷ ${f.installWorkersPerDay||2} עובדים = ${f.installDays} ימים</div>`:''}
+        ${f._installWorkerDays?`<div style="font-size:11px;color:var(--t3);margin-top:3px">סה"כ ימי-עובד מהקובץ: ${f._installWorkerDays} ÷ ${f.installWorkersPerDay||2} עובדים = ${f.installDays} ימים</div>`:''}
       </div>
     </div>`;
   }else if(step===2){
@@ -1720,12 +1721,12 @@ function renderNP(){
     ${ps?`<div style="background:#0f172a;border-radius:8px;padding:14px;margin-bottom:14px">
       <div style="font-size:16px;font-weight:600;color:var(--t3);margin-bottom:10px">לוח זמנים מחושב</div>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-        ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`<div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33"><div style="font-size:29px;color:var(--t3);margin-bottom:3px">${l}</div><div style="font-weight:600;color:${c};font-size:28px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div></div>`).join('')}
+        ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`<div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33"><div style="font-size:11px;color:var(--t3);margin-bottom:3px">${l}</div><div style="font-weight:600;color:${c};font-size:12px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div></div>`).join('')}
       </div></div>`:``}`;
   }else{
     const items=f._pi||[];
     con=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:28px;color:var(--t3)">אביזרים לרכש</div>
+      <div style="font-size:12px;color:var(--t3)">אביזרים לרכש</div>
       <button class="btn pri sm" onclick="doAddFPI()">+ הוסף</button></div>
     ${items.map((item,i)=>`<div style="display:flex;gap:10px;align-items:flex-end;background:#0f172a;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--b)">
       <div class="fld" style="flex:1;margin:0"><label class="fl">אביזר</label><select class="fi" onchange="S.nf._pi[${i}].name=this.value"><option value="">בחר...</option>${S.pmaster.map(n=>`<option${item.name===n?' selected':''}>${n}</option>`).join('')}</select></div>
@@ -1736,7 +1737,7 @@ function renderNP(){
   const sHtml=`<div style="display:flex;align-items:center;gap:0;margin-bottom:22px">
     ${steps.map((l,i)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
       <div class="step-dot" style="background:${step>i+1?'#16a34a':step===i+1?'#3b82f6':'#1e293b'};border-color:${step>i+1?'#15803d':step===i+1?'#2563eb':'#334155'};color:${step>=i+1?'#fff':'#475569'}">${step>i+1?'✓':i+1}</div>
-      <div style="font-size:29px;color:${step===i+1?'#93c5fd':'var(--t3)'}">${l}</div>
+      <div style="font-size:11px;color:${step===i+1?'#93c5fd':'var(--t3)'}">${l}</div>
     </div>${i<steps.length-1?`<div style="flex:1;height:2px;background:var(--b)"></div>`:''}`).join('')}</div>`;
   return`<div class="mbg">
     <div class="modal wide">
@@ -1775,11 +1776,11 @@ function renderUM(){
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
           <label class="tog"><input type="checkbox" id="um_agent" ${u.isAgent?'checked':''}><span class="tog-sl"></span></label>
-          <span style="font-size:28px">סוכן אחראי</span>
+          <span style="font-size:12px">סוכן אחראי</span>
         </div>
         ${isE?`<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
           <label class="tog"><input type="checkbox" id="um_active" ${u.active!==false?'checked':''}><span class="tog-sl"></span></label>
-          <span style="font-size:28px">משתמש פעיל</span></div>`:''}
+          <span style="font-size:12px">משתמש פעיל</span></div>`:''}
         <div id="um_err" style="color:#fca5a5;font-size:16px;margin-top:8px"></div>
       </div>
       <div class="mft">
@@ -1798,7 +1799,7 @@ function renderRM(){
       <div class="mhd"><div class="mttl">דחיית פרויקט</div><button class="btn sm" onclick="closeM()">✕</button></div>
       <div class="mbdy">
         <div class="alert aw">תישלח הודעה ליוזם</div>
-        <div style="font-size:29px;margin-bottom:12px;font-weight:500">${p?.client} — ${p?.projectName}</div>
+        <div style="font-size:11px;margin-bottom:12px;font-weight:500">${p?.client} — ${p?.projectName}</div>
         <div class="fld"><label class="fl">סיבת הדחייה</label>
           <textarea class="fi" id="rm_note" rows="3" placeholder="כתוב סיבה...">${S.md.rn||''}</textarea></div>
       </div>
@@ -1825,7 +1826,7 @@ function renderCancelProj(){
           <div class="alert ae" style="margin-bottom:16px">
             ⚠️ פעולה זו תבטל את הפרויקט לצמיתות ולא ניתן לבטלה
           </div>
-          <div style="background:var(--bg3);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;font-size:28px">
+          <div style="background:var(--bg3);border-radius:var(--r8);padding:12px 14px;margin-bottom:16px;font-size:12px">
             <div class="tt-row"><span class="tt-lbl">לקוח</span><span style="font-weight:600">${p.client}</span></div>
             <div class="tt-row"><span class="tt-lbl">הזמנה</span><span class="mono">${p.orderNum}</span></div>
             <div class="tt-row"><span class="tt-lbl">סטטוס נוכחי</span><span>${sbdg(p)}</span></div>
@@ -1836,18 +1837,18 @@ function renderCancelProj(){
             <textarea class="fi" id="cancel_note" rows="4"
               placeholder="פרט את סיבת ביטול הפרויקט..."
               style="resize:vertical">${S.md._cancelNote||''}</textarea>
-            <div style="font-size:29px;color:var(--t3);margin-top:3px">סיבה זו תירשם בלוג הפעולות ותצורף להערות הפרויקט</div>
+            <div style="font-size:11px;color:var(--t3);margin-top:3px">סיבה זו תירשם בלוג הפעולות ותצורף להערות הפרויקט</div>
           </div>
         `:`
           <div class="alert ae" style="margin-bottom:16px;flex-direction:column;align-items:flex-start;gap:8px">
-            <div style="font-weight:700;font-size:29px">⚠️ אישור סופי — האם אתה בטוח?</div>
+            <div style="font-weight:700;font-size:11px">⚠️ אישור סופי — האם אתה בטוח?</div>
             <div>הפרויקט <strong>${p.client}</strong> יבוטל לצמיתות</div>
           </div>
           <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--r8);padding:12px 14px;margin-bottom:14px">
             <div style="font-size:16px;color:var(--t3);margin-bottom:4px">סיבת הביטול:</div>
-            <div style="font-size:29px;color:var(--t)">${S.md._cancelNote||'—'}</div>
+            <div style="font-size:11px;color:var(--t)">${S.md._cancelNote||'—'}</div>
           </div>
-          <div style="font-size:28px;color:var(--t3)">לחץ "אשר ביטול" כדי לאשר סופית</div>
+          <div style="font-size:12px;color:var(--t3)">לחץ "אשר ביטול" כדי לאשר סופית</div>
         `}
       </div>
       <div class="mft" style="justify-content:space-between">
@@ -1916,7 +1917,7 @@ function render(){
     document.getElementById('root').innerHTML=`<div class="app">${renderTopbar()}${body}${modal}</div>`;
   }catch(err){
     console.error('Render error:',err);
-    document.getElementById('root').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:20px;text-align:center"><div style="font-size:32px">⚠️</div><div style="color:#f87171;font-size:28px">שגיאת תצוגה</div><div style="color:#64748b;font-size:28px">${err.message}</div><button onclick="location.reload()" style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px">רענן דף</button></div>`;
+    document.getElementById('root').innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px;padding:20px;text-align:center"><div style="font-size:32px">⚠️</div><div style="color:#f87171;font-size:12px">שגיאת תצוגה</div><div style="color:#64748b;font-size:12px">${err.message}</div><button onclick="location.reload()" style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:8px">רענן דף</button></div>`;
   }
   if(S.view==='admin'&&!S.adminOK)setTimeout(()=>document.getElementById('pin0')?.focus(),50);
 }
@@ -2448,7 +2449,7 @@ function ttHide(){const t=ttEl();if(t)t.classList.remove('show');}
 document.addEventListener('mousemove',e=>{const t=ttEl();if(t&&t.classList.contains('show'))ttPos(e);});
 
 function ttBar(label,pct,col){
-  return`<div style="margin-top:6px"><div style="font-size:29px;color:var(--t3);margin-bottom:3px">${label}</div><div style="height:5px;background:var(--b3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.max(0,pct))}%;background:${col};border-radius:3px"></div></div></div>`;
+  return`<div style="margin-top:6px"><div style="font-size:11px;color:var(--t3);margin-bottom:3px">${label}</div><div style="height:5px;background:var(--b3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.max(0,pct))}%;background:${col};border-radius:3px"></div></div></div>`;
 }
 
 function buildPlanTT(p){
@@ -2529,7 +2530,7 @@ function buildProcTT(p,itemId){
 
 function buildProcSummary(p,md){
   const proc=p.procurement||[];
-  if(!proc.length)return`<div style="color:var(--t3);font-size:28px;padding:8px 0">אין אביזרי רכש — <button class="btn xs pri" onclick="V('mt','procurement')">עבור לטאב רכש להוספה</button></div>`;
+  if(!proc.length)return`<div style="color:var(--t3);font-size:12px;padding:8px 0">אין אביזרי רכש — <button class="btn xs pri" onclick="V('mt','procurement')">עבור לטאב רכש להוספה</button></div>`;
   const installDt=toD(p.installDate);
   const rows=proc.map(item=>{
     const expDt=toD(item.expected);
@@ -2555,13 +2556,13 @@ function buildProcSummary(p,md){
     }
 
     // Late vs install warning
-    const lateChip=lateVsInstall?`<span class="bdg br" style="font-size:26px">⚠ אחרי התקנה</span>`:'';
+    const lateChip=lateVsInstall?`<span class="bdg br" style="font-size:11px">⚠ אחרי התקנה</span>`:'';
 
     return `<div style="background:${bgCol};border:1px solid ${borderCol};border-radius:var(--r8);padding:12px 14px;display:flex;flex-direction:column;gap:10px">
       <!-- Header row -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-weight:700;font-size:29px">${item.name}</span>
+          <span style="font-weight:700;font-size:11px">${item.name}</span>
           <span class="bdg ${statusClass}">${dlbl[ds]}</span>
           ${lateChip}
         </div>
@@ -2573,22 +2574,22 @@ function buildProcSummary(p,md){
           <label class="fl">תאריך הזמנה</label>
           <input type="date" class="fi" value="${toISO(item.ordered)}"
             onchange="doUpPD('${pid(p)}','${item.id}','ordered',this.value)"
-            style="font-size:28px;padding:6px 9px">
-          ${!item.ordered&&!item.cancelled?`<div style="font-size:29px;color:#fbbf24;margin-top:2px">⚠ טרם הוזמן</div>`:''}
+            style="font-size:12px;padding:6px 9px">
+          ${!item.ordered&&!item.cancelled?`<div style="font-size:11px;color:#fbbf24;margin-top:2px">⚠ טרם הוזמן</div>`:''}
         </div>
         <div class="fld" style="margin:0">
           <label class="fl" style="color:${lateVsInstall?'#f87171':''}">אספקה צפויה ${lateVsInstall?'⚠':''}</label>
           <input type="date" class="fi" value="${toISO(item.expected)}"
             onchange="doUpPD('${pid(p)}','${item.id}','expected',this.value)"
-            style="font-size:28px;padding:6px 9px;border-color:${lateVsInstall?'rgba(239,68,68,.5)':''}">
-          ${!item.expected&&!item.cancelled?`<div style="font-size:29px;color:#f87171;margin-top:2px">⚠ חסר תאריך אספקה</div>`:''}
-          ${lateVsInstall&&expDt&&installDt?`<div style="font-size:29px;color:#f87171;margin-top:2px">${diffD(p.installDate,item.expected)} ימים אחרי התקנה</div>`:''}
+            style="font-size:12px;padding:6px 9px;border-color:${lateVsInstall?'rgba(239,68,68,.5)':''}">
+          ${!item.expected&&!item.cancelled?`<div style="font-size:11px;color:#f87171;margin-top:2px">⚠ חסר תאריך אספקה</div>`:''}
+          ${lateVsInstall&&expDt&&installDt?`<div style="font-size:11px;color:#f87171;margin-top:2px">${diffD(p.installDate,item.expected)} ימים אחרי התקנה</div>`:''}
         </div>
         ${item.arrived?`<div class="fld" style="margin:0">
           <label class="fl" style="color:#4ade80">✓ הגיע בפועל</label>
           <input type="date" class="fi" value="${toISO(item.arrivedDate)}"
             onchange="doUpPD('${pid(p)}','${item.id}','arrivedDate',this.value)"
-            style="font-size:28px;padding:6px 9px;border-color:rgba(34,197,94,.4)">
+            style="font-size:12px;padding:6px 9px;border-color:rgba(34,197,94,.4)">
         </div>`:''}
       </div>
     </div>`;
@@ -2752,7 +2753,7 @@ function renderArchive(){
               :'<span style="color:var(--t4);font-size:11px">—</span>'
         }</td>
         <td><span style="font-weight:700;color:${scoreCol};font-family:'IBM Plex Mono',monospace">${score}</span></td>
-      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:28px;opacity:.4">📦</div><div style="color:var(--t3)">אין פרויקטים מוגמרים</div></td></tr>`}
+      </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px"><div style="font-size:12px;opacity:.4">📦</div><div style="color:var(--t3)">אין פרויקטים מוגמרים</div></td></tr>`}
     </tbody></table></div>
   </div>`;
 }
@@ -3008,51 +3009,37 @@ async function testBrevoKey(){
 }
 
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W = {V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
-  setDashFilter,setProjFilter,clearDashFilter,clearProjFilter
-};
+const W={V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+  setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
+Object.entries(W).forEach(([k,v])=>window[k]=v);
+// Expose S and render for inline handlers
+window.S=S;
+window.render=render;
 
-Object.entries(W).forEach(([k, v]) => window[k] = v);
-
-window.S = S;
-window.render = render;
-
-onAuthStateChanged(auth, async (firebaseUser) => {
-  if (firebaseUser) {
-    S.authUser = firebaseUser;
+// ── AUTH STATE LISTENER ───────────────────────────────────────
+onAuthStateChanged(auth,async(firebaseUser)=>{
+  if(firebaseUser){
+    S.authUser=firebaseUser;
     await fbLoadAll();
-
-    let u = S.users.find(x =>
-      x.id === firebaseUser.uid || x.email === firebaseUser.email
-    );
-
-    if (!u) {
-      u = {
-        id: firebaseUser.uid,
-        name: firebaseUser.displayName || firebaseUser.email,
-        email: firebaseUser.email,
-        roleId: 'admin',
-        active: true,
-        isAgent: true,
-        phone: '',
-        notif: defNotif()
-      };
-
-      S.users = [...S.users, u];
+    // Find matching user record by email or uid
+    let u=S.users.find(x=>x.id===firebaseUser.uid||x.email===firebaseUser.email);
+    if(!u){
+      // Auto-create user record for first admin
+      u={id:firebaseUser.uid,name:firebaseUser.displayName||firebaseUser.email,email:firebaseUser.email,roleId:'admin',active:true,isAgent:true,phone:'',notif:defNotif()};
+      S.users=[...S.users,u];
       await fbSaveSettings();
     }
-
-    S.currentUser = u;
-    S.loading = false;
+    S.currentUser=u;
+    S.loading=false;
     render();
     logAction('login');
-
-    setTimeout(() => checkDailyAlerts(), 2000);
-
-  } else {
-    S.authUser = null;
-    S.currentUser = null;
-    S.loading = false;
+    // Run daily alerts check after data loads
+    setTimeout(()=>checkDailyAlerts(),2000);
+  }else{
+    S.authUser=null;S.currentUser=null;S.loading=false;
     render();
   }
 });
+</script>
+</body>
+</html>
