@@ -547,6 +547,17 @@ const BREVO_SENDER = 'mickey@sinun.co.il';
 async function sendMail(toName,toEmail,notifType,message,projectName){
   // Load key from Firebase settings if not loaded yet
   if(!BREVO_API_KEY&&S.settings?.brevoKey) BREVO_API_KEY=S.settings.brevoKey;
+  // Try loading directly from Firestore if still missing
+  if(!BREVO_API_KEY){
+    try{
+      const snap=await getDoc(doc(db,'settings','main'));
+      if(snap.exists()&&snap.data().brevoKey){
+        BREVO_API_KEY=snap.data().brevoKey;
+        S.settings=S.settings||{};
+        S.settings.brevoKey=BREVO_API_KEY;
+      }
+    }catch(e){console.warn('Could not load brevoKey:',e);}
+  }
   if(!BREVO_API_KEY){
     console.warn('Brevo API Key לא הוגדר — הגדר ב-ניהול ← הגדרות');return;
   }
@@ -3000,12 +3011,24 @@ async function saveBrevoKey(){
 async function testBrevoKey(){
   const key=document.getElementById('brevo_key_inp')?.value?.trim();
   if(!key){alert('נא להכניס API Key קודם');return;}
-  const oldKey=BREVO_API_KEY;
   BREVO_API_KEY=key;
-  await sendMail(cu()?.name||'בדיקה', cu()?.email||'mickey@sinun.co.il',
-    '🧪 בדיקת מייל','זהו מייל בדיקה מ-ProjectFlow. אם קיבלת אותו — הכל עובד!','בדיקה');
-  BREVO_API_KEY=oldKey;
-  alert('נשלח! בדוק את תיבת הדואר שלך');
+  const toEmail=cu()?.email||'mickey@sinun.co.il';
+  const toName=cu()?.name||'בדיקה';
+  try{
+    const body={
+      sender:{name:'ProjectFlow',email:BREVO_SENDER},
+      to:[{email:toEmail,name:toName}],
+      subject:'ProjectFlow — 🧪 בדיקת מייל',
+      htmlContent:`<div dir="rtl" style="font-family:Arial,sans-serif;font-size:14px">זהו מייל בדיקה מ-ProjectFlow.<br>אם קיבלת אותו — הכל עובד! ✓</div>`,
+    };
+    const res=await fetch('https://api.brevo.com/v3/smtp/email',{
+      method:'POST',
+      headers:{'api-key':key,'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+    });
+    if(res.ok){alert('✓ נשלח! בדוק את תיבת הדואר שלך ('+toEmail+')');}
+    else{const err=await res.json();alert('שגיאה: '+JSON.stringify(err));}
+  }catch(e){alert('שגיאה: '+e.message);}
 }
 
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
