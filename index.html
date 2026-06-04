@@ -3008,37 +3008,51 @@ async function testBrevoKey(){
 }
 
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
-  setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
-Object.entries(W).forEach(([k,v])=>window[k]=v);
-// Expose S and render for inline handlers
-window.S=S;
-window.render=render;
+const W = {V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+  setDashFilter,setProjFilter,clearDashFilter,clearProjFilter
+};
 
-// ── AUTH STATE LISTENER ───────────────────────────────────────
-onAuthStateChanged(auth,async(firebaseUser)=>{
-  if(firebaseUser){
-    S.authUser=firebaseUser;
+Object.entries(W).forEach(([k, v]) => window[k] = v);
+
+window.S = S;
+window.render = render;
+
+onAuthStateChanged(auth, async (firebaseUser) => {
+  if (firebaseUser) {
+    S.authUser = firebaseUser;
     await fbLoadAll();
-    // Find matching user record by email or uid
-    let u=S.users.find(x=>x.id===firebaseUser.uid||x.email===firebaseUser.email);
-    if(!u){
-      // Auto-create user record for first admin
-      u={id:firebaseUser.uid,name:firebaseUser.displayName||firebaseUser.email,email:firebaseUser.email,roleId:'admin',active:true,isAgent:true,phone:'',notif:defNotif()};
-      S.users=[...S.users,u];
+
+    let u = S.users.find(x =>
+      x.id === firebaseUser.uid || x.email === firebaseUser.email
+    );
+
+    if (!u) {
+      u = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || firebaseUser.email,
+        email: firebaseUser.email,
+        roleId: 'admin',
+        active: true,
+        isAgent: true,
+        phone: '',
+        notif: defNotif()
+      };
+
+      S.users = [...S.users, u];
       await fbSaveSettings();
     }
-    S.currentUser=u;
-    S.loading=false;
+
+    S.currentUser = u;
+    S.loading = false;
     render();
     logAction('login');
-    // Run daily alerts check after data loads
-    setTimeout(()=>checkDailyAlerts(),2000);
-  }else{
-    S.authUser=null;S.currentUser=null;S.loading=false;
+
+    setTimeout(() => checkDailyAlerts(), 2000);
+
+  } else {
+    S.authUser = null;
+    S.currentUser = null;
+    S.loading = false;
     render();
   }
 });
-</script>
-</body>
-</html>
