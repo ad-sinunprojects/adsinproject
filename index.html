@@ -1338,7 +1338,7 @@ function renderAdmin(){
     
   </div></div>`;
 
-  const tabs=[{k:'users',l:'משתמשים'},{k:'notifications',l:'התראות'},{k:'procItems',l:'אביזרי רכש'},{k:'auditlog',l:'לוג פעולות'}];
+  const tabs=[{k:'users',l:'משתמשים'},{k:'notifications',l:'התראות'},{k:'procItems',l:'אביזרי רכש'},{k:'settings',l:'⚙️ הגדרות'},{k:'auditlog',l:'לוג פעולות'}];
   let tc='';
   if(S.at==='users'){
     tc=`<div style="display:flex;justify-content:space-between;margin-bottom:12px">
@@ -1405,6 +1405,34 @@ function renderAdmin(){
           </div>
         </div>
       </div>`;}).join(''):`<div style="text-align:center;color:#475569;padding:32px">אין פעולות להצגה</div>`}`;
+  if(S.at==='settings'){
+    const brevoStatus=S.settings?.brevoKey
+      ?'<span style="color:#16a34a;font-size:12px;font-weight:600">&#10003; API Key מוגדר</span>'
+      :'<span style="color:#dc2626;font-size:12px;font-weight:600">&#9888; API Key לא מוגדר</span>';
+    const brevoVal=S.settings?.brevoKey||'';
+    tc=`<div>
+      <div class="sec">הגדרות מיילים (Brevo)</div>
+      <div style="background:var(--bg3);border:1px solid var(--b);border-radius:var(--r8);padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--t2);margin-bottom:12px">
+          ה-API Key נשמר ב-Firebase — לא מופיע בקוד הציבורי
+        </div>
+        <div class="fld">
+          <label class="fl">Brevo API Key</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="password" class="fi" id="brevo_key_inp"
+              placeholder="xkeysib-..."
+              value="${brevoVal}"
+              style="font-family:'IBM Plex Mono',monospace;flex:1;min-width:200px">
+            <button class="btn pri sm" onclick="saveBrevoKey()">&#128190; שמור</button>
+            <button class="btn sec sm" onclick="testBrevoKey()">&#129514; בדוק</button>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:6px">
+            קבל מפתח ב: <a href="https://app.brevo.com/settings/keys/api" target="_blank" style="color:var(--blue)">app.brevo.com</a> · 300 מיילים/יום בחינם
+          </div>
+        </div>
+        <div style="margin-top:8px">${brevoStatus}</div>
+      </div>
+    </div>`;
   }
   return`<div class="main">
     <div class="page-hdr"><div class="page-title">🔒 ניהול מערכת</div><button class="btn sm" onclick="S.adminOK=false;render()">נעל</button></div>
@@ -2833,7 +2861,7 @@ function renderArchiveDetail(p){
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             ${item.arrived?`<span class="bdg bg" style="font-size:10px">✓ הגיע ${fmtD(item.arrivedDate)}</span>`:`<span class="bdg br" style="font-size:10px">לא הגיע</span>`}
-            ${delay!==null?`<span class="diff-chip ${delay>0?'diff-pos':delay<0?'diff-neg':'diff-zero'}" style="font-size:10px">${delay>0?'+'+delay:delay} י'</span>`:''}
+            ${delay!==null?`<span class="diff-chip ${delay>0?'diff-pos':delay<0?'diff-neg':'diff-zero'}" style="font-size:10px">${delay>0?'+'+delay:delay} י</span>`:''}
           </div>
         </div>`;
       }).join('')}
