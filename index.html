@@ -519,7 +519,14 @@ const prods=()=>S.users.filter(u=>u.roleId==='prod'&&u.active!==false);
 const av=(u,sz=26)=>{if(!u)return`<span class="av" style="width:${sz}px;height:${sz}px;background:#1e293b;color:#64748b;font-size:${sz*.38}px">?</span>`;const r=getRole(u.roleId);return`<span class="av" style="width:${sz}px;height:${sz}px;background:${r.color}22;color:${r.color};font-size:${sz*.38}px">${ini(u.name)}</span>`;};
 const bdg=(c,l)=>`<span class="bdg ${c}">${l}</span>`;
 const sbdg=p=>{const eff=computeAutoStatus(p);return bdg(SMAP[eff]||'by',eff||'—');};
-const barSt=(p,t)=>{const e=toD(t==='planning'?p.planEnd:p.prodEnd),a=toD(t==='planning'?p.actualPlanEnd:p.actualProdEnd),s=toD(t==='planning'?p.planStart:p.prodStart);if(a)return'done';if(e&&e<TODAY)return'overdue';if(s&&s>TODAY)return'future';return'active';};
+const barSt=(p,t)=>{
+  const e=toD(t==='planning'?p.planEnd:p.prodEnd),a=toD(t==='planning'?p.actualPlanEnd:p.actualProdEnd),s=toD(t==='planning'?p.planStart:p.prodStart);
+  if(a)return'done';
+  // Overdue only from the day AFTER the planned end date
+  if(e){const eod=new Date(e);eod.setHours(23,59,59,999);if(eod<TODAY)return'overdue';}
+  if(s&&s>TODAY)return'future';
+  return'active';
+};
 const hasCf=(p,s,e,t)=>{const eid=t==='planning'?p.engineerId:p.prodManagerId;if(!eid)return false;return S.projects.filter(x=>pid(x)!==pid(p)&&(t==='planning'?x.engineerId===eid:x.prodManagerId===eid)).some(x=>{const xs=toD(t==='planning'?x.planStart:x.prodStart),xe=toD(t==='planning'?x.planEnd:x.prodEnd);return xs&&xe&&s<=xe&&e>=xs;});};
 const sugStart=(p,t)=>{let d=new Date(TODAY);while(isWE(d))d=addD(d,1);for(let i=0;i<180;i++){const e=bizEnd(d,p.planHours||30);if(!hasCf(p,d,e,t))return d;d=addD(d,1);while(isWE(d))d=addD(d,1);}return new Date(TODAY);};
 const getVR=()=>{if(S.vm==='week'){const dow=TODAY.getDay(),sun=addD(TODAY,-dow),s=addD(sun,S.vo*7);return{start:s,end:addD(s,27)};}const b=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),s=new Date(b.getFullYear(),b.getMonth()+S.vo,1),e=new Date(s.getFullYear(),s.getMonth()+3,0);return{start:s,end:e};};
@@ -605,12 +612,12 @@ async function checkDailyAlerts(){
     if(p.status==='הושלם'||p.rejected)continue;
     const client=p.client||'';
     // overdue planning
-    if(!p.actualPlanEnd&&p.planEnd&&toD(p.planEnd)<TODAY){
+    if(!p.actualPlanEnd&&p.planEnd&&(()=>{const e=toD(p.planEnd);const eod=new Date(e);eod.setHours(23,59,59,999);return eod<TODAY;})()){
       await notifyUsers('overdue','⚠ חריגה בתכנון',
         `פרויקט ${client} חרג מתאריך סיום התכנון המתוכנן (${fmtD(p.planEnd)})`,client);
     }
     // overdue production
-    if(!p.actualProdEnd&&p.prodEnd&&toD(p.prodEnd)<TODAY&&p.status!=='תכנון'){
+    if(!p.actualProdEnd&&p.prodEnd&&p.status!=='תכנון'&&(()=>{const e=toD(p.prodEnd);const eod=new Date(e);eod.setHours(23,59,59,999);return eod<TODAY;})()){
       await notifyUsers('overdue','⚠ חריגה בייצור',
         `פרויקט ${client} חרג מתאריך סיום הייצור המתוכנן (${fmtD(p.prodEnd)})`,client);
     }
@@ -1044,15 +1051,31 @@ function renderGantt(){
     let bars='';
     if(S.gt==='planning'||S.gt==='production'){
       const t=S.gt,bs=t==='planning'?p.planStart:p.prodStart,be=t==='planning'?p.planEnd:p.prodEnd;
-      const st=barSt(p,t),col=BARCOL[st],l=pct(bs,vs,ve),w=wpct(bs,be,vs,ve),per=t==='planning'?eng:pm;
-      if(w>0.1){
-        const _tt=t==='planning'?buildPlanTT(p):buildProdTT(p);
-        bars+=`<div class="gbar" style="left:${Math.max(0,l)}%;width:${w}%;background:${col}"
-          onclick="openPD('${pid(p)}')"
-          onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_tt)}'),event)"
-          onmousemove="ttPos(event)"
-          onmouseleave="ttHide()"><span>${p.client}${per?' · '+per.name:''}</span></div>`;
-      }
+      const st=barSt(p,t),col=BARCOL[st],per=t==='planning'?eng:pm;
+      const pauses=t==='planning'?(p.planPauses||[]):(p.prodPauses||[]);
+      const segments=getPauseSegments(bs,be,pauses);
+      const _tt=t==='planning'?buildPlanTT(p):buildProdTT(p);
+      const isPaused=t==='planning'?p.planPaused:p.prodPaused;
+      segments.forEach((seg,si)=>{
+        const l=pct(seg.start,vs,ve),w=wpct(seg.start,seg.end,vs,ve);
+        if(w>0.1){
+          const isLast=si===segments.length-1;
+          const barCol=isPaused&&isLast?'#f59e0b':col;
+          bars+=`<div class="gbar" style="left:${Math.max(0,l)}%;width:${w}%;background:${barCol};${isPaused&&isLast?'opacity:.7':''}"
+            onclick="openPD('${pid(p)}')"
+            onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_tt)}'),event)"
+            onmousemove="ttPos(event)"
+            onmouseleave="ttHide()"><span>${si===0?p.client+(per?' · '+per.name:''):isPaused&&isLast?'⏸':''}</span></div>`;
+        }
+        // Draw gap between segments (pause period)
+        if(si<segments.length-1){
+          const gapStart=segments[si].end,gapEnd=segments[si+1].start;
+          const gl=pct(gapStart,vs,ve),gw=wpct(gapStart,gapEnd,vs,ve);
+          if(gw>0.2){
+            bars+=`<div style="position:absolute;left:${Math.max(0,gl)}%;width:${gw}%;height:6px;top:50%;transform:translateY(-50%);background:repeating-linear-gradient(90deg,#f59e0b 0,#f59e0b 4px,transparent 4px,transparent 8px);border-radius:2px;z-index:2;pointer-events:none"></div>`;
+          }
+        }
+      });
     }else if(S.gt==='milestones'){
       // Timeline bar
       if(p.planStart&&p.installDate){
@@ -1070,7 +1093,7 @@ function renderGantt(){
         if(mp>=-2&&mp<=102){
           const _tt=buildMilestoneTT(p,m.t);
           const isDone=!!m.actual;
-          const isOverdue=!m.actual&&toD(m.d)&&toD(m.d)<TODAY;
+          const isOverdue=!m.actual&&toD(m.d)&&(()=>{const eod=new Date(toD(m.d));eod.setHours(23,59,59,999);return eod<TODAY;})();
           const borderStyle=isDone?`box-shadow:0 0 0 2px ${m.c},0 0 8px ${m.c}44`
             :isOverdue?`box-shadow:0 0 0 2px #ef4444,0 0 8px #ef444444`:'';
           const col=isOverdue?'#ef4444':m.c;
@@ -1526,7 +1549,17 @@ function renderPD(){
         ?`<button class="btn sec sm" onclick="S.md._planStartConfirm=true;render()">▶ עדכן תחילת תכנון</button>`
         :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר תחילת תכנון היום?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planStartConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doPlanStartToday('${pid(p)}')">✓ אשר</button></div></div>`)
         :''}
-      ${canMarkPlan&&!p.actualPlanEnd?(!planConfirm
+      ${canMarkPlan&&p.actualPlanStart&&!p.actualPlanEnd?(
+        p.planPaused
+          ?(!S.md._planResumeConfirm
+            ?`<button class="btn suc sm" onclick="S.md._planResumeConfirm=true;render()">▶ חדש תכנון</button>`
+            :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר חידוש התכנון?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planResumeConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doResumePlanning('${pid(p)}')">✓ אשר</button></div></div>`)
+          :(!S.md._planPauseConfirm
+            ?`<button class="btn sec sm" style="color:#f59e0b;border-color:#f59e0b" onclick="S.md._planPauseConfirm=true;render()">⏸ עצור תכנון</button>`
+            :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר עצירת התכנון?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planPauseConfirm=false;render()">ביטול</button><button class="btn sm" style="background:#f59e0b;color:#fff" onclick="doPausePlanning('${pid(p)}')">⏸ אשר</button></div></div>`)
+      ):''}
+      ${(p.planPauses||[]).length?`<div style="font-size:11px;color:#f59e0b;display:flex;align-items:center;gap:4px">⏸ ${p.planPauses.length} עצירות${p.planPaused?' · עצור כעת':''}</div>`:''}
+      ${canMarkPlan&&!p.actualPlanEnd&&!p.planPaused?(!planConfirm
         ?`<button class="btn pri sm" onclick="S.md._planConfirm=true;render()">✓ סמן סיום תכנון</button>`
         :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>האם לאשר סיום תכנון הנדסי?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._planConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doMarkPlanDone('${pid(p)}')">✓ אשר</button></div></div>`)
         :''}
@@ -1562,7 +1595,17 @@ function renderPD(){
         ?`<button class="btn sec sm" onclick="S.md._prodStartConfirm=true;render()">▶ עדכן תחילת ייצור</button>`
         :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר תחילת ייצור היום?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodStartConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doProdStartToday('${pid(p)}')">✓ אשר</button></div></div>`)
         :''}
-      ${canMarkProd&&!p.actualProdEnd?(!prodConfirm
+      ${canMarkProd&&p.actualProdStart&&!p.actualProdEnd?(
+        p.prodPaused
+          ?(!S.md._prodResumeConfirm
+            ?`<button class="btn suc sm" onclick="S.md._prodResumeConfirm=true;render()">▶ חדש ייצור</button>`
+            :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר חידוש הייצור?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodResumeConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doResumeProduction('${pid(p)}')">✓ אשר</button></div></div>`)
+          :(!S.md._prodPauseConfirm
+            ?`<button class="btn sec sm" style="color:#f59e0b;border-color:#f59e0b" onclick="S.md._prodPauseConfirm=true;render()">⏸ עצור ייצור</button>`
+            :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>לאשר עצירת הייצור?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodPauseConfirm=false;render()">ביטול</button><button class="btn sm" style="background:#f59e0b;color:#fff" onclick="doPauseProduction('${pid(p)}')">⏸ אשר</button></div></div>`)
+      ):''}
+      ${(p.prodPauses||[]).length?`<div style="font-size:11px;color:#f59e0b;display:flex;align-items:center;gap:4px">⏸ ${p.prodPauses.length} עצירות${p.prodPaused?' · עצור כעת':''}</div>`:''}
+      ${canMarkProd&&!p.actualProdEnd&&!p.prodPaused?(!prodConfirm
         ?`<button class="btn pri sm" onclick="S.md._prodConfirm=true;render()">✓ סמן סיום ייצור</button>`
         :`<div class="alert aw" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%"><span>האם לאשר סיום ייצור?</span><div style="display:flex;gap:6px"><button class="btn sm dan" onclick="S.md._prodConfirm=false;render()">ביטול</button><button class="btn sm suc" onclick="doMarkProdDone('${pid(p)}')">✓ אשר</button></div></div>`)
         :''}
@@ -3048,8 +3091,64 @@ async function testBrevoKey(){
   }catch(e){alert('שגיאה: '+e.message);}
 }
 
+
+// ── PAUSE / RESUME ────────────────────────────────────────────
+async function doPausePlanning(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const pauses=[...(p.planPauses||[]),{pausedAt:new Date().toISOString(),resumedAt:null}];
+  upProj(id,{planPauses:pauses,planPaused:true});
+  S.md._planPauseConfirm=false;
+  await logAction('update_status',`${p.client||''} — תכנון הופסק`);
+  render();
+}
+async function doResumePlanning(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const pauses=(p.planPauses||[]).map((pause,i,arr)=>
+    i===arr.length-1&&!pause.resumedAt?{...pause,resumedAt:new Date().toISOString()}:pause
+  );
+  upProj(id,{planPauses:pauses,planPaused:false});
+  S.md._planResumeConfirm=false;
+  await logAction('update_status',`${p.client||''} — תכנון חודש`);
+  render();
+}
+async function doPauseProduction(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const pauses=[...(p.prodPauses||[]),{pausedAt:new Date().toISOString(),resumedAt:null}];
+  upProj(id,{prodPauses:pauses,prodPaused:true});
+  S.md._prodPauseConfirm=false;
+  await logAction('update_status',`${p.client||''} — ייצור הופסק`);
+  render();
+}
+async function doResumeProduction(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  const pauses=(p.prodPauses||[]).map((pause,i,arr)=>
+    i===arr.length-1&&!pause.resumedAt?{...pause,resumedAt:new Date().toISOString()}:pause
+  );
+  upProj(id,{prodPauses:pauses,prodPaused:false});
+  S.md._prodResumeConfirm=false;
+  await logAction('update_status',`${p.client||''} — ייצור חודש`);
+  render();
+}
+// Get pause segments for a project phase - returns array of {start,end} active periods
+function getPauseSegments(start, end, pauses){
+  if(!start||!pauses||!pauses.length) return [{start,end}];
+  const segments=[];
+  let segStart=start;
+  for(const pause of pauses){
+    const pa=toD(pause.pausedAt);
+    const pr=toD(pause.resumedAt);
+    if(pa&&pa>toD(segStart)){
+      segments.push({start:segStart,end:pause.pausedAt});
+    }
+    segStart=pause.resumedAt||null;
+    if(!segStart)break;
+  }
+  if(segStart){segments.push({start:segStart,end});}
+  return segments.length?segments:[{start,end}];
+}
+
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+const W={V,doLogin,doLogout,doPausePlanning,doResumePlanning,doPauseProduction,doResumeProduction,getPauseSegments,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
   setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
 Object.entries(W).forEach(([k,v])=>window[k]=v);
 // Expose S and render for inline handlers
