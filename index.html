@@ -1685,6 +1685,11 @@ function renderNP(){
   const err=id=>e[id]?`<div class="emsg">שדה חובה</div>`:'';
   const steps=['פרטי פרויקט','לוח זמנים','רכש'];
   let con='';
+  // Auto-save form on any input change
+  setTimeout(()=>{
+    const modal=document.querySelector('.modal .mbdy');
+    if(modal)modal.addEventListener('input',()=>saveFormState(),{passive:true});
+  },0);
   if(step===1){
     con=`${f._parsed?`<div class="alert aok" style="margin-bottom:12px">✓ נקרא: <strong>${f._parsed}</strong></div>`:''}
     <div class="upz" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hDrop(event);this.classList.remove('drag')" onclick="document.getElementById('exi').click()">
@@ -2025,8 +2030,17 @@ async function doSaveEU(){
   closeM();
 }
 
-function hEngChange(val){S.nf.engineerId=val;if(val&&S.nf.planHours){const sg=sugStart({id:'__new__',engineerId:val,planHours:S.nf.planHours},'planning');S.nf._sg=sg;S.nf.planStart=toISO(sg);}render();}
-function hPSChange(val){S.nf.planStart=val;render();}
+// Save all visible form fields into S.nf before any render
+function saveFormState(){
+  if(S.modal!=='np')return;
+  const ids=['orderNum','client','projectName','projectType','agentId','engineerId','prodManagerId','planHours','prodHours'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el&&el.value)S.nf[id]=el.value;});
+  const idEl=document.getElementById('installDays');if(idEl&&idEl.value)S.nf.installDays=parseInt(idEl.value)||0;
+  const wpEl=document.getElementById('installWorkersPerDay');if(wpEl&&wpEl.value)S.nf.installWorkersPerDay=parseInt(wpEl.value)||2;
+  const psEl=document.getElementById('planStart');if(psEl&&psEl.value)S.nf.planStart=psEl.value;
+}
+function hEngChange(val){saveFormState();S.nf.engineerId=val;if(val&&S.nf.planHours){const sg=sugStart({id:'__new__',engineerId:val,planHours:S.nf.planHours},'planning');S.nf._sg=sg;S.nf.planStart=toISO(sg);}render();}
+function hPSChange(val){saveFormState();S.nf.planStart=val;render();}
 
 // ── EXCEL PARSER ─────────────────────────────────────────────
 async function parseExcel(file){
@@ -2175,6 +2189,7 @@ function extractFromWB(wb){
 }
 
 async function processExcelFile(file){
+  saveFormState();
   S.nf._parsed=file.name;
   S.nf._parseErr=null;
   S.nf._parsing=true;
@@ -2218,6 +2233,7 @@ async function processExcelFile(file){
 
 
 function recalcInstallDays(workers){
+  saveFormState();
   const w=parseInt(workers)||2;
   S.nf.installWorkersPerDay=w;
   if(S.nf._installWorkerDays){
@@ -2228,9 +2244,10 @@ function recalcInstallDays(workers){
 function hFU(input){const file=input.files[0];if(!file)return;processExcelFile(file);}
 function hDrop(e){e.preventDefault();const file=e.dataTransfer.files[0];if(!file)return;processExcelFile(file);}
 
-function doAddFPI(){S.nf._pi=[...(S.nf._pi||[]),{name:'',expected:''}];render();}
+function doAddFPI(){saveFormState();S.nf._pi=[...(S.nf._pi||[]),{name:'',expected:''}];render();}
 
 function doNextStep(){
+  saveFormState();
   if(S.fs===1){
     const ids=['orderNum','client','projectName','projectType','agentId','engineerId','prodManagerId','planHours','prodHours'];
     ids.forEach(id=>{const el=document.getElementById(id);if(el)S.nf[id]=el.value;});
