@@ -1053,7 +1053,12 @@ function renderGantt(){
     const eng=getUser(p.engineerId),pm=getUser(p.prodManagerId);
     let bars='';
     if(S.gt==='planning'||S.gt==='production'){
-      const t=S.gt,bs=t==='planning'?p.planStart:p.prodStart,be=t==='planning'?p.planEnd:p.prodEnd;
+      const t=S.gt;
+      // Use actual start/end when available, else planned
+      const actStartD=t==='planning'?p.actualPlanStart:p.actualProdStart;
+      const actEndD=t==='planning'?p.actualPlanEnd:p.actualProdEnd;
+      const bs=actStartD||(t==='planning'?p.planStart:p.prodStart);
+      const be=actEndD||(t==='planning'?p.planEnd:p.prodEnd);
       const st=barSt(p,t),col=BARCOL[st],per=t==='planning'?eng:pm;
       const pauses=t==='planning'?(p.planPauses||[]):(p.prodPauses||[]);
       const segments=getPauseSegments(bs,be,pauses);
