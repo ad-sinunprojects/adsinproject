@@ -516,7 +516,7 @@ const getUser=id=>S.users.find(u=>u.id===id);
 const agents=()=>S.users.filter(u=>u.isAgent&&u.active!==false);
 const engs=()=>S.users.filter(u=>u.roleId==='eng'&&u.active!==false);
 const prods=()=>S.users.filter(u=>u.roleId==='prod'&&u.active!==false);
-const av=(u,sz=26)=>{if(!u)return`<span class="av" style="width:${sz}px;height:${sz}px;background:#1e293b;color:#64748b;font-size:${sz*.38}px">?</span>`;const r=getRole(u.roleId);return`<span class="av" style="width:${sz}px;height:${sz}px;background:${r.color}22;color:${r.color};font-size:${sz*.38}px">${ini(u.name)}</span>`;};
+const av=(u,sz=26)=>{if(!u)return`<span class="av" style="width:${sz}px;height:${sz}px;background:var(--bg4);color:#94a3b8;font-size:${sz*.38}px">?</span>`;const r=getRole(u.roleId);return`<span class="av" style="width:${sz}px;height:${sz}px;background:${r.color}22;color:${r.color};font-size:${sz*.38}px">${ini(u.name)}</span>`;};
 const bdg=(c,l)=>`<span class="bdg ${c}">${l}</span>`;
 const sbdg=p=>{const eff=computeAutoStatus(p);return bdg(SMAP[eff]||'by',eff||'—');};
 const barSt=(p,t)=>{
@@ -527,7 +527,7 @@ const barSt=(p,t)=>{
   if(s&&s>TODAY)return'future';
   return'active';
 };
-const hasCf=(p,s,e,t)=>{const eid=t==='planning'?p.engineerId:p.prodManagerId;if(!eid)return false;return S.projects.filter(x=>pid(x)!==pid(p)&&(t==='planning'?x.engineerId===eid:x.prodManagerId===eid)).some(x=>{const xs=toD(t==='planning'?x.planStart:x.prodStart),xe=toD(t==='planning'?x.planEnd:x.prodEnd);return xs&&xe&&s<=xe&&e>=xs;});};
+const hasCf=(p,s,e,t)=>{const eid=t==='planning'?p.engineerId:p.prodManagerId;if(!eid)return false;return S.projects.filter(x=>pid(x)!==pid(p)&&!x.cancelled&&x.status!=='הושלם'&&(t==='planning'?x.engineerId===eid:x.prodManagerId===eid)).some(x=>{const xs=toD(t==='planning'?x.planStart:x.prodStart),xe=toD(t==='planning'?x.planEnd:x.prodEnd);return xs&&xe&&s<=xe&&e>=xs;});};
 const sugStart=(p,t)=>{let d=new Date(TODAY);while(isWE(d))d=addD(d,1);for(let i=0;i<180;i++){const e=bizEnd(d,p.planHours||30);if(!hasCf(p,d,e,t))return d;d=addD(d,1);while(isWE(d))d=addD(d,1);}return new Date(TODAY);};
 const getVR=()=>{if(S.vm==='week'){const dow=TODAY.getDay(),sun=addD(TODAY,-dow),s=addD(sun,S.vo*7);return{start:s,end:addD(s,27)};}const b=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),s=new Date(b.getFullYear(),b.getMonth()+S.vo,1),e=new Date(s.getFullYear(),s.getMonth()+3,0);return{start:s,end:e};};
 const defNotif=()=>({planStart:false,planEnd:false,prodStart:false,overdue:false,procMissing:false,statusChange:false});
@@ -606,6 +606,11 @@ async function notifyUsers(notifKey, notifType, message, projectName){
 
 // ── Check daily alerts (overdue + upcoming) ──
 async function checkDailyAlerts(){
+  // Don't run if Brevo key not loaded yet (avoids 31 failed sends on startup)
+  if(!BREVO_API_KEY&&!S.settings?.brevoKey)return;
+  // Only run once per calendar day per browser
+  const todayKey='alertsRun_'+TODAY.toDateString();
+  try{if(sessionStorage.getItem(todayKey))return;sessionStorage.setItem(todayKey,'1');}catch(e){}
   const tomorrow=new Date(TODAY);tomorrow.setDate(tomorrow.getDate()+1);
   const tmStr=tomorrow.toDateString();
   for(const p of S.projects){
@@ -690,25 +695,22 @@ async function fbSaveSettings(){
 }
 // ── AUTO STATUS ───────────────────────────────────────────────
 function computeAutoStatus(p){
-  // Only override stored status in clear-cut cases based on actual dates
+  if(p.cancelled)return'בוטל';
   // 1. Install done → הושלם
   if(p.actualInstallDate)return'הושלם';
-  // 2. Prod done but status still shows ייצור → ממתין להתקנה
-  if(p.actualProdEnd&&(p.status==='ייצור'||p.status==='רכש'))return'ממתין להתקנה';
-  // 3. Plan done but status still shows תכנון → ממתין לייצור
-  if(p.actualPlanEnd&&p.status==='תכנון')return'ממתין לייצור';
-  // 4. Newly approved (status not yet updated from old 'תכנון' default)
-  //    Only if plan hasn't actually started (no actualPlanStart)
-  if(p.approved&&!p.actualPlanStart&&!p.actualPlanEnd&&
-    (p.status==='תכנון'||!p.status)){
-    // Check if planStart is in the future → waiting
-    const ps=toD(p.planStart);
-    if(!ps||ps>TODAY)return'ממתין לתכנון';
-    // planStart passed but no actualPlanStart recorded → still waiting (user didn't click button)
-    // Don't assume they started - they need to click the button
+  // 2. Prod done → ממתין להתקנה (unless install already started)
+  if(p.actualProdEnd&&(p.status==='ייצור'||p.status==='רכש'||p.status==='ממתין להתקנה'))return'ממתין להתקנה';
+  // 3. Production actually started → ייצור
+  if(p.actualProdStart&&!p.actualProdEnd)return p.prodPaused?'ייצור':'ייצור';
+  // 4. Plan done but production not started → ממתין לייצור
+  if(p.actualPlanEnd&&!p.actualProdStart&&(p.status==='תכנון'||p.status==='ממתין לייצור'))return'ממתין לייצור';
+  // 5. Planning actually STARTED (planner clicked start) → תכנון, never "waiting for planning"
+  if(p.actualPlanStart&&!p.actualPlanEnd)return'תכנון';
+  // 6. Approved but planning hasn't started yet → ממתין לתכנון
+  if((p.approved||p.approvedOnce)&&!p.actualPlanStart&&!p.actualPlanEnd){
     return'ממתין לתכנון';
   }
-  // 5. Trust stored status
+  // 7. Trust stored status
   return p.status||'תכנון';
 }
 
@@ -837,7 +839,7 @@ function renderLogin(errMsg,loading){
 
 // ── RENDER: TOPBAR ────────────────────────────────────────────
 function renderTopbar(){
-  const u=cu(),pend=S.projects.filter(p=>!p.approved&&!p.rejected).length;
+  const u=cu(),pend=S.projects.filter(p=>!p.approved&&!p.rejected&&!p.approvedOnce).length;
   const views=[['dashboard','לוח בקרה'],['projects','פרויקטים'],['gantt','גאנטים'],['milestones','אבני דרך'],['approval','אישור'+(pend?` (${pend})`:'')]];
   return`<div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;overflow:hidden">
@@ -869,7 +871,7 @@ function renderDash(){
   });
   const ps=allPs;
   const ov=allPs.filter(p=>barSt(p,'planning')==='overdue'||barSt(p,'production')==='overdue');
-  const pend=allPs.filter(p=>!p.approved&&!p.rejected);
+  const pend=allPs.filter(p=>!p.approved&&!p.rejected&&!p.approvedOnce);
   // Helper: procurement status
   const procStatus=p=>{
     const proc=(p.procurement||[]).filter(i=>!i.cancelled);
@@ -997,9 +999,9 @@ function renderProjects(){
       <span style="font-size:16px;color:var(--t3);white-space:nowrap;flex-shrink:0">${filtered.length} מתוך ${S.projects.length}</span>
     </div>
     <div class="card" style="overflow-x:auto">
-    <table style="min-width:900px"><thead><tr>
+    <table style="min-width:950px"><thead><tr>
       <th>לקוח</th><th>הזמנה</th><th>סוג</th><th>סוכן</th><th>מתכנן</th>
-      <th>סטטוס</th><th>תחילת תכנון</th><th>סיום ייצור</th><th>התקנה</th><th>אושר</th>
+      <th>סטטוס</th><th>תחילת תכנון</th><th>סיום ייצור</th><th>התקנה</th><th>אושר</th><th>עריכה</th>
     </tr></thead>
     <tbody>${filtered.length?filtered.map(p=>{
       const ag=getUser(p.agentId),eng=getUser(p.engineerId);
@@ -1018,8 +1020,9 @@ function renderProjects(){
         <td class="mono" style="font-size:16px">${fmtD(p.planStart)}</td>
         <td class="mono" style="font-size:16px;color:${barSt(p,'production')==='overdue'?'#f87171':'var(--t2)'}">${fmtD(p.prodEnd)}</td>
         <td class="mono" style="color:#10b981;font-weight:600">${fmtD(p.installDate)}</td>
-        <td>${p.approved?bdg('bg','✓'):bdg('bam','ממתין')}</td>
-      </tr>`;}).join(''):`<tr><td colspan="10" style="text-align:center;padding:40px">
+        <td>${p.approved||p.approvedOnce?bdg('bg','✓'):bdg('bam','ממתין')}</td>
+        <td><button class="btn xs sec" onclick="event.stopPropagation();openEditProj('${pid(p)}')">✏ ערוך</button></td>
+      </tr>`;}).join(''):`<tr><td colspan="11" style="text-align:center;padding:40px">
         <div style="font-size:32px;margin-bottom:10px;opacity:.4">🔍</div>
         <div style="color:var(--t3);font-size:11px">${hasFilter?'אין תוצאות לחיפוש זה':'אין פרויקטים'}</div>
         ${hasFilter?`<button class="btn sm sec" style="margin-top:10px" onclick="clearProjFilter()">נקה חיפוש</button>`:''}
@@ -1056,16 +1059,38 @@ function renderGantt(){
       const segments=getPauseSegments(bs,be,pauses);
       const _tt=t==='planning'?buildPlanTT(p):buildProdTT(p);
       const isPaused=t==='planning'?p.planPaused:p.prodPaused;
+      // ── Execution % vs standard hours (excluding pause time) ──
+      const stdHours=t==='planning'?(p.planHours||0):(p.prodHours||0);
+      const actStart=t==='planning'?p.actualPlanStart:p.actualProdStart;
+      const actEnd=t==='planning'?p.actualPlanEnd:p.actualProdEnd;
+      let execPct=null;
+      if(stdHours>0&&actStart){
+        const endRef=actEnd||new Date().toISOString();
+        // count business days from actStart to endRef, minus paused business days
+        let workDays=0,d=toD(actStart);const endD=toD(endRef);
+        while(d&&endD&&d<=endD){if(!isWE(d))workDays++;d=addD(d,1);}
+        // subtract paused business days
+        for(const pause of pauses){
+          if(pause.pausedAt&&pause.resumedAt){
+            let pd=toD(pause.pausedAt);const pr=toD(pause.resumedAt);
+            while(pd&&pr&&pd<pr){if(!isWE(pd))workDays--;pd=addD(pd,1);}
+          }
+        }
+        const actualHours=Math.max(0,workDays)*8;
+        execPct=Math.round(actualHours/stdHours*100);
+      }
+      const execLabel=execPct!==null?` (${execPct}%)`:'';
+      const execCol=execPct===null?col:execPct>110?'#dc2626':execPct>100?'#d97706':col;
       segments.forEach((seg,si)=>{
         const l=pct(seg.start,vs,ve),w=wpct(seg.start,seg.end,vs,ve);
         if(w>0.1){
           const isLast=si===segments.length-1;
-          const barCol=isPaused&&isLast?'#f59e0b':col;
+          const barCol=isPaused&&isLast?'#f59e0b':(execPct!==null&&isLast?execCol:col);
           bars+=`<div class="gbar" style="left:${Math.max(0,l)}%;width:${w}%;background:${barCol};${isPaused&&isLast?'opacity:.7':''}"
             onclick="openPD('${pid(p)}')"
             onmouseenter="ttShow(decodeURIComponent('${encodeURIComponent(_tt)}'),event)"
             onmousemove="ttPos(event)"
-            onmouseleave="ttHide()"><span>${si===0?p.client+(per?' · '+per.name:''):isPaused&&isLast?'⏸':''}</span></div>`;
+            onmouseleave="ttHide()"><span>${si===0?p.client+(per?' · '+per.name:'')+execLabel:isPaused&&isLast?'⏸':''}</span></div>`;
         }
         // Draw gap between segments (pause period)
         if(si<segments.length-1){
@@ -1107,7 +1132,7 @@ function renderGantt(){
           if(m.actual){
             const ap=pct(m.actual,vs,ve);
             if(ap>=-2&&ap<=102){
-              bars+=`<div style="position:absolute;left:${ap}%;top:calc(50% - 16px);transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:${m.c};border:2px solid #0f1e35;z-index:5;pointer-events:none"></div>`;
+              bars+=`<div style="position:absolute;left:${ap}%;top:calc(50% - 16px);transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:${m.c};border:2px solid #fff;z-index:5;pointer-events:none"></div>`;
             }
           }
         }
@@ -1164,7 +1189,7 @@ function renderGantt(){
           <option value="all">כל המתכננים</option>
           ${engs().map(u=>`<option value="${u.id}"${S.fe===u.id?' selected':''}>${u.name}</option>`).join('')}
         </select>
-        <div style="display:flex;gap:1px;background:#0f172a;border-radius:6px;padding:2px">
+        <div style="display:flex;gap:1px;background:var(--bg4);border:1px solid var(--b);border-radius:6px;padding:2px">
           <button class="btn sm${S.vm==='week'?' act':''}" onclick="V('vm','week');V('vo',0)">שבועי</button>
           <button class="btn sm${S.vm==='month'?' act':''}" onclick="V('vm','month');V('vo',0)">חודשי</button>
         </div>
@@ -1183,7 +1208,7 @@ function renderGantt(){
         <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#10b981;border-radius:1px"></div>התקנה</div>
         <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#a78bfa;border-radius:1px"></div>רכש</div>
         <div style="display:flex;align-items:center;gap:5px"><div style="width:11px;height:11px;transform:rotate(45deg);background:#ef4444;border-radius:1px"></div>חריגה / אחרי התקנה</div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;border:2px solid #0f1e35"></div>בפועל</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;border:2px solid #fff"></div>בפועל</div>
       </div>`:''}
     </div>
     <div class="card" style="overflow:hidden;width:100%;max-width:none">
@@ -1274,7 +1299,7 @@ function renderMilestones(){
 
 // ── APPROVAL ──────────────────────────────────────────────────
 function renderApproval(){
-  const pend=S.projects.filter(p=>!p.approved&&!p.rejected);
+  const pend=S.projects.filter(p=>!p.approved&&!p.rejected&&!p.approvedOnce);
   const canEdit=['admin','tapi'].includes(cu()?.roleId);
   const editingId=S.md._approvalEdit||null;
 
@@ -1320,7 +1345,7 @@ function renderApproval(){
                 onblur="S.md._editForm=S.md._editForm||{};S.md._editForm.prodHours=parseInt(this.value)||${prh};render()">
             </div>
           </div>
-          ${ps?`<div style="background:#0f172a;border-radius:8px;padding:14px;margin-bottom:14px">
+          ${ps?`<div style="background:var(--bg4);border:1px solid var(--b);border-radius:8px;padding:14px;margin-bottom:14px">
             <div style="font-size:16px;font-weight:600;color:var(--t3);margin-bottom:10px">לוח זמנים מחושב מחדש</div>
             <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
               ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`
@@ -1405,7 +1430,7 @@ function renderAdmin(){
       <div style="font-size:12px;color:var(--t3)">רשימת האביזרים הזמינה</div>
       <button class="btn pri sm" onclick="doAddPM()">+ אביזר</button></div>
     <div style="display:flex;flex-wrap:wrap;gap:8px">
-      ${S.pmaster.map((item,i)=>`<div style="display:flex;align-items:center;gap:6px;background:#0f172a;border:1px solid var(--b);border-radius:6px;padding:5px 10px;font-size:12px">${item}<button onclick="doRmPM(${i})" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;line-height:1">×</button></div>`).join('')}
+      ${S.pmaster.map((item,i)=>`<div style="display:flex;align-items:center;gap:6px;background:#eef2f7;color:#0f172a;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500">${item}<button onclick="doRmPM(${i})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:15px;line-height:1;font-weight:700">×</button></div>`).join('')}
     </div>`;
   }else if(S.at==='settings'){
     const brevoStatus=S.settings?.brevoKey
@@ -1699,12 +1724,12 @@ function renderPD(){
   return`<div class="mbg">
     <div class="modal wide">
       <div class="mhd">
-        <div><div class="mttl">${p.client} — ${p.projectName}</div><div style="font-size:16px;color:var(--t3)">${p.orderNum} · ${eng?.name||'—'} · ${ag?.name||'—'}</div></div>
+        <div><div class="mttl">${p.client||'—'} — ${p.projectName||'—'}</div><div style="font-size:11px;color:var(--t3)">הזמנה ${p.orderNum||'—'} · מתכנן: ${eng?.name||'—'} · סוכן: ${ag?.name||'—'}</div></div>
         <div style="display:flex;align-items:center;gap:8px">${sbdg(p)}<button class="btn sm" onclick="closeM()">✕</button></div>
       </div>
       <div style="padding:12px 18px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:2px;overflow-x:auto;flex-shrink:0">
         ${ms.map((m,i,arr)=>`<div style="display:flex;align-items:center;flex-shrink:0"><div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-          <div style="width:24px;height:24px;border-radius:50%;background:${m.ok?'#16a34a':m.ov?'#dc2626':'#1e293b'};display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid ${m.ok?'#15803d':m.ov?'#b91c1c':'var(--b)'};color:${m.ok||m.ov?'#fff':'#64748b'}">${m.ok?'✓':m.ov?'!':'○'}</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:${m.ok?'#16a34a':m.ov?'#dc2626':'var(--bg4)'};display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid ${m.ok?'#15803d':m.ov?'#b91c1c':'var(--b)'};color:${m.ok||m.ov?'#fff':'#64748b'}">${m.ok?'✓':m.ov?'!':'○'}</div>
           <div style="font-size:11px;color:var(--t3);text-align:center;max-width:50px;line-height:1.2">${m.l}</div>
           <div style="font-size:11px;color:${m.ov?'#fca5a5':'#64748b'};font-family:'IBM Plex Mono',monospace">${fmtS(m.d)}</div>
         </div>${i<arr.length-1?`<div style="width:20px;height:2px;background:var(--b);margin:0 2px;margin-bottom:22px"></div>`:''}</div>`).join('')}
@@ -1772,12 +1797,12 @@ function renderNP(){
   }else if(step===2){
     const ps=f.planStart?new Date(f.planStart):null;
     const pe=ps&&f.planHours?bizEnd(ps,f.planHours):null,prS=pe?addD(nextBiz(pe),1):null,prE=prS&&f.prodHours?bizEnd(prS,f.prodHours):null,ins=prE?addD(nextBiz(prE),1):null;
-    const cf=ps&&pe&&f.engineerId?hasCf({id:'__new__',engineerId:f.engineerId},ps,pe,'planning'):false;
+    const cf=ps&&pe&&f.engineerId?hasCf({id:f._editId||'__new__',engineerId:f.engineerId},ps,pe,'planning'):false;
     con=`${f._sg?`<div class="alert ai" style="margin-bottom:12px">💡 תאריך מומלץ: <strong>${fmtD(f._sg)}</strong></div>`:''}
     ${cf?`<div class="alert aw" style="margin-bottom:12px">⚠️ חפיפה עם מתכנן זה</div>`:''}
     <div class="g2"><div class="fld"><label class="fl">תחילת תכנון *</label>
       <input type="date" ${fi('planStart')} value="${f.planStart||''}" onchange="hPSChange(this.value)">${err('planStart')}</div></div>
-    ${ps?`<div style="background:#0f172a;border-radius:8px;padding:14px;margin-bottom:14px">
+    ${ps?`<div style="background:var(--bg4);border:1px solid var(--b);border-radius:8px;padding:14px;margin-bottom:14px">
       <div style="font-size:16px;font-weight:600;color:var(--t3);margin-bottom:10px">לוח זמנים מחושב</div>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
         ${[['סיום תכנון',pe,'#3b82f6'],['פגישת תיאום',pe?nextBiz(pe):null,'#7c3aed'],['תחילת ייצור',prS,'#f59e0b'],['סיום ייצור',prE,'#ef4444'],['התקנה',ins,'#10b981']].map(([l,d,c])=>`<div style="text-align:center;background:var(--bg2);border-radius:6px;padding:8px;border:1px solid ${c}33"><div style="font-size:11px;color:var(--t3);margin-bottom:3px">${l}</div><div style="font-weight:600;color:${c};font-size:12px;font-family:'IBM Plex Mono',monospace">${fmtS(d)}</div></div>`).join('')}
@@ -1787,7 +1812,7 @@ function renderNP(){
     con=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-size:12px;color:var(--t3)">אביזרים לרכש</div>
       <button class="btn pri sm" onclick="doAddFPI()">+ הוסף</button></div>
-    ${items.map((item,i)=>`<div style="display:flex;gap:10px;align-items:flex-end;background:#0f172a;border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--b)">
+    ${items.map((item,i)=>`<div style="display:flex;gap:10px;align-items:flex-end;background:var(--bg4);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--b)">
       <div class="fld" style="flex:1;margin:0"><label class="fl">אביזר</label><select class="fi" onchange="S.nf._pi[${i}].name=this.value"><option value="">בחר...</option>${S.pmaster.map(n=>`<option${item.name===n?' selected':''}>${n}</option>`).join('')}</select></div>
       <div class="fld" style="flex:1;margin:0"><label class="fl">אספקה צפויה</label><input type="date" class="fi" value="${item.expected||''}" onchange="S.nf._pi[${i}].expected=this.value"></div>
       <button class="btn xs" style="color:#fca5a5;margin-bottom:2px" onclick="S.nf._pi.splice(${i},1);render()">×</button>
@@ -1795,17 +1820,17 @@ function renderNP(){
   }
   const sHtml=`<div style="display:flex;align-items:center;gap:0;margin-bottom:22px">
     ${steps.map((l,i)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0">
-      <div class="step-dot" style="background:${step>i+1?'#16a34a':step===i+1?'#3b82f6':'#1e293b'};border-color:${step>i+1?'#15803d':step===i+1?'#2563eb':'#334155'};color:${step>=i+1?'#fff':'#475569'}">${step>i+1?'✓':i+1}</div>
+      <div class="step-dot" style="background:${step>i+1?'#16a34a':step===i+1?'#3b82f6':'var(--bg4)'};border-color:${step>i+1?'#15803d':step===i+1?'#2563eb':'var(--b)'};color:${step>=i+1?'#fff':'#475569'}">${step>i+1?'✓':i+1}</div>
       <div style="font-size:11px;color:${step===i+1?'#93c5fd':'var(--t3)'}">${l}</div>
     </div>${i<steps.length-1?`<div style="flex:1;height:2px;background:var(--b)"></div>`:''}`).join('')}</div>`;
   return`<div class="mbg">
     <div class="modal wide">
-      <div class="mhd"><div class="mttl">פרויקט חדש</div><button class="btn sm" onclick="closeM()">✕</button></div>
+      <div class="mhd"><div class="mttl">${S.nf._editId?'עריכת פרויקט — '+(S.nf.client||''):'פרויקט חדש'}</div><button class="btn sm" onclick="closeM()">✕</button></div>
       <div class="mbdy">${sHtml}${con}</div>
       <div class="mft">
         <button class="btn" onclick="closeM()">ביטול</button>
-        ${step>1?`<button class="btn" onclick="V('fs',S.fs-1)">← אחורה</button>`:''}
-        ${step<3?`<button class="btn pri" onclick="doNextStep()">הבא →</button>`:`<button class="btn pri" onclick="doSaveProj()">✓ שמור</button>`}
+        ${step>1?`<button class="btn" onclick="saveFormState();V('fs',S.fs-1)">← אחורה</button>`:''}
+        ${step<3?`<button class="btn pri" onclick="doNextStep()">הבא →</button>`:`<button class="btn pri" onclick="doSaveProj()">${S.nf._editId?'✓ שמור שינויים':'✓ שמור'}</button>`}
       </div>
     </div>
   </div>`;
@@ -1986,6 +2011,21 @@ function V(k,v){S[k]=v;render();}
 function openPD(id){S.modal='pd';S.md={pid:id};S.mt='schedule';S.nn='';render();}
 function openPM(pj,it){S.modal='pm';S.md={pid:pj,iid:it};render();}
 function openNP(){S.modal='np';S.nf={_pi:[]};S.fs=1;S.ferr={};render();}
+function openEditProj(id){
+  const p=S.projects.find(x=>pid(x)===id);if(!p)return;
+  S.modal='np';
+  S.fs=1;S.ferr={};
+  S.nf={
+    _editId:id,
+    orderNum:p.orderNum||'',client:p.client||'',projectName:p.projectName||'',projectType:p.projectType||'',
+    agentId:p.agentId||'',engineerId:p.engineerId||'',prodManagerId:p.prodManagerId||'',
+    planHours:p.planHours||'',prodHours:p.prodHours||'',installDays:p.installDays||'',
+    installWorkersPerDay:p.installWorkersPerDay||2,
+    planStart:toISO(p.planStart),
+    _pi:(p.procurement||[]).map(it=>({name:it.name,expected:toISO(it.expected),_id:it.id})),
+  };
+  render();
+}
 function openAL(){S.view='admin';render();}
 function openRM(id){S.modal='rm';S.md={pid:id,rn:''};render();}
 function openAU(){S.modal='addUser';S.nf={roleId:'eng',active:true,isAgent:false};render();}
@@ -2311,6 +2351,35 @@ async function doSaveProj(){
   // If installDays provided, recalculate installDate from prodEnd
   const installDays=parseInt(S.nf.installDays)||0;
   const insDate=installDays>0?bizEnd(addD(nextBiz(prE),1),installDays*8):ins;
+
+  // ── EDIT MODE ──
+  if(S.nf._editId){
+    const id=S.nf._editId;
+    const existing=S.projects.find(x=>pid(x)===id);
+    if(!existing){closeM();return;}
+    // Preserve actual dates, approval, notes, pauses. Update editable fields + recalc planned dates.
+    const changes={
+      orderNum:S.nf.orderNum,client:S.nf.client,projectName:S.nf.projectName,projectType:S.nf.projectType,
+      agentId:S.nf.agentId,engineerId:S.nf.engineerId,prodManagerId:S.nf.prodManagerId,
+      planStart:ps.toISOString(),planEnd:pe.toISOString(),planHours:parseInt(S.nf.planHours),
+      prodStart:prS.toISOString(),prodEnd:prE.toISOString(),prodHours:parseInt(S.nf.prodHours),
+      installDays:installDays||null,installDate:insDate.toISOString(),
+    };
+    // Merge procurement: keep existing items' status, add new ones
+    const oldProc=existing.procurement||[];
+    changes.procurement=(S.nf._pi||[]).filter(it=>it.name).map((it,i)=>{
+      const match=it._id?oldProc.find(o=>o.id===it._id):null;
+      if(match)return{...match,name:it.name,expected:it.expected?new Date(it.expected).toISOString():match.expected};
+      return{id:'i'+Date.now()+i,name:it.name,ordered:null,expected:it.expected?new Date(it.expected).toISOString():null,arrived:false,arrivedDate:null,cancelled:false};
+    });
+    changes.notes=[...(existing.notes||[]),{user:cu()?.name||'',text:'פרטי הפרויקט עודכנו',date:new Date().toISOString()}];
+    upProj(id,changes);
+    closeM();
+    await logAction('update_date',`${S.nf.client} — עריכת פרטי פרויקט`);
+    return;
+  }
+
+  // ── NEW PROJECT ──
   const np={id:'P'+Date.now(),orderNum:S.nf.orderNum,client:S.nf.client,projectName:S.nf.projectName,projectType:S.nf.projectType,
     agentId:S.nf.agentId,engineerId:S.nf.engineerId,prodManagerId:S.nf.prodManagerId,
     planStart:ps.toISOString(),planEnd:pe.toISOString(),planHours:parseInt(S.nf.planHours),actualPlanEnd:null,
@@ -2325,7 +2394,7 @@ async function doSaveProj(){
 }
 async function doApprove(id){
   const p=S.projects.find(x=>pid(x)===id);
-  upProj(id,{approved:true,status:'ממתין לתכנון',approvedDate:new Date().toISOString()});
+  upProj(id,{approved:true,approvedOnce:true,rejected:false,status:'ממתין לתכנון',approvedDate:p?.approvedDate||new Date().toISOString()});
   await logAction('approve',p?.client||'');
   if(p)await notifyUsers('statusChange','✅ פרויקט אושר',
     `פרויקט ${p.client} אושר ונכנס ללוח הזמנים.\nתכנון: ${fmtD(p.planStart)} → ${fmtD(p.planEnd)}\nהתקנה: ${fmtD(p.installDate)}`,
@@ -2342,7 +2411,15 @@ async function doRejP(id){
 }
 async function doUpDate(id,k,v){
   const p=S.projects.find(x=>pid(x)===id);
-  upProj(id,{[k]:v?new Date(v).toISOString():null});
+  const iso=v?new Date(v).toISOString():null;
+  const changes={[k]:iso};
+  // Auto-advance status when actual start/end dates are entered
+  if(k==='actualPlanStart'&&iso&&(p.status==='ממתין לתכנון'||!p.actualPlanStart)){changes.status='תכנון';}
+  if(k==='actualPlanEnd'&&iso){changes.status='ממתין לייצור';}
+  if(k==='actualProdStart'&&iso&&(p.status==='ממתין לייצור'||!p.actualProdStart)){changes.status='ייצור';}
+  if(k==='actualProdEnd'&&iso){changes.status='ממתין להתקנה';}
+  if(k==='actualInstallDate'&&iso){changes.status='הושלם';}
+  upProj(id,changes);
   await logAction('update_date',`${p?.client||''} — ${k}`);
 }
 async function doUpStatus(id,v){
@@ -3148,7 +3225,7 @@ function getPauseSegments(start, end, pauses){
 }
 
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,doPausePlanning,doResumePlanning,doPauseProduction,doResumeProduction,getPauseSegments,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+const W={V,doLogin,doLogout,doPausePlanning,doResumePlanning,doPauseProduction,doResumeProduction,getPauseSegments,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openEditProj,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
   setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
 Object.entries(W).forEach(([k,v])=>window[k]=v);
 // Expose S and render for inline handlers
@@ -3172,8 +3249,8 @@ onAuthStateChanged(auth,async(firebaseUser)=>{
     S.loading=false;
     render();
     logAction('login');
-    // Run daily alerts check after data loads
-    setTimeout(()=>checkDailyAlerts(),2000);
+    // Run daily alerts check after data + Brevo key are loaded
+    setTimeout(()=>checkDailyAlerts(),5000);
   }else{
     S.authUser=null;S.currentUser=null;S.loading=false;
     render();
