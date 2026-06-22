@@ -694,23 +694,25 @@ async function fbSaveSettings(){
   catch(e){console.error('fbSaveSettings',e);}
 }
 // ── AUTO STATUS ───────────────────────────────────────────────
+// Strict sequential state machine driven ONLY by actual milestone dates.
+// Sequence: ממתין לתכנון → תכנון → ממתין לייצור → ייצור → ממתין להתקנה → הושלם
+// Each step only "counts" if its prerequisite step was completed, so an
+// out-of-order date entry can never skip the project ahead.
 function computeAutoStatus(p){
   if(p.cancelled)return'בוטל';
-  // 1. Install done → הושלם
-  if(p.actualInstallDate)return'הושלם';
-  // 2. Prod done → ממתין להתקנה (unless install already started)
-  if(p.actualProdEnd&&(p.status==='ייצור'||p.status==='רכש'||p.status==='ממתין להתקנה'))return'ממתין להתקנה';
-  // 3. Production actually started → ייצור
-  if(p.actualProdStart&&!p.actualProdEnd)return p.prodPaused?'ייצור':'ייצור';
-  // 4. Plan done but production not started → ממתין לייצור
-  if(p.actualPlanEnd&&!p.actualProdStart&&(p.status==='תכנון'||p.status==='ממתין לייצור'))return'ממתין לייצור';
-  // 5. Planning actually STARTED (planner clicked start) → תכנון, never "waiting for planning"
-  if(p.actualPlanStart&&!p.actualPlanEnd)return'תכנון';
-  // 6. Approved but planning hasn't started yet → ממתין לתכנון
-  if((p.approved||p.approvedOnce)&&!p.actualPlanStart&&!p.actualPlanEnd){
-    return'ממתין לתכנון';
-  }
-  // 7. Trust stored status
+  // Installation done (requires production finished) → completed
+  if(p.actualInstallDate&&p.actualProdEnd)return'הושלם';
+  // Production finished (requires planning finished) → waiting for installation
+  if(p.actualProdEnd&&p.actualPlanEnd)return'ממתין להתקנה';
+  // Production started (requires planning finished) → in production
+  if(p.actualProdStart&&p.actualPlanEnd)return'ייצור';
+  // Planning finished → waiting for production
+  if(p.actualPlanEnd)return'ממתין לייצור';
+  // Planning started → in planning
+  if(p.actualPlanStart)return'תכנון';
+  // Approved but planning hasn't started → waiting for planning
+  if(p.approved||p.approvedOnce)return'ממתין לתכנון';
+  // Not yet approved → trust stored status (default planning)
   return p.status||'תכנון';
 }
 
@@ -2418,12 +2420,12 @@ async function doUpDate(id,k,v){
   const p=S.projects.find(x=>pid(x)===id);
   const iso=v?new Date(v).toISOString():null;
   const changes={[k]:iso};
-  // Auto-advance status when actual start/end dates are entered
-  if(k==='actualPlanStart'&&iso&&(p.status==='ממתין לתכנון'||!p.actualPlanStart)){changes.status='תכנון';}
-  if(k==='actualPlanEnd'&&iso){changes.status='ממתין לייצור';}
-  if(k==='actualProdStart'&&iso&&(p.status==='ממתין לייצור'||!p.actualProdStart)){changes.status='ייצור';}
-  if(k==='actualProdEnd'&&iso){changes.status='ממתין להתקנה';}
-  if(k==='actualInstallDate'&&iso){changes.status='הושלם';}
+  // For actual milestone dates, recompute the status from the full milestone set
+  // so transitions stay strictly sequential (never skip a step).
+  const actualKeys=['actualPlanStart','actualPlanEnd','actualProdStart','actualProdEnd','actualInstallDate'];
+  if(actualKeys.includes(k)){
+    changes.status=computeAutoStatus({...p,...changes});
+  }
   upProj(id,changes);
   await logAction('update_date',`${p?.client||''} — ${k}`);
 }
@@ -2528,22 +2530,37 @@ async function doApprovalSaveAndApprove(id){
 
 async function doPlanStartToday(id){
   const p=S.projects.find(x=>pid(x)===id);if(!p)return;
-  upProj(id,{actualPlanStart:new Date().toISOString(),status:'תכנון'});
+  const changes={actualPlanStart:new Date().toISOString()};
+  changes.status=computeAutoStatus({...p,...changes});
+  upProj(id,changes);
   S.md._planStartConfirm=false;
   await logAction('update_date',`${p.client||''} — תחילת תכנון בפועל`);
   render();
 }
 async function doProdStartToday(id){
   const p=S.projects.find(x=>pid(x)===id);if(!p)return;
-  upProj(id,{actualProdStart:new Date().toISOString(),status:'ייצור'});
-  // Clear 'ממתין לייצור'
+  const today=new Date().toISOString();
+  const changes={actualProdStart:today};
+  // Production can't start before planning ended — backfill if missing
+  if(!p.actualPlanEnd)changes.actualPlanEnd=today;
+  if(!p.actualPlanStart)changes.actualPlanStart=today;
+  changes.status=computeAutoStatus({...p,...changes});
+  upProj(id,changes);
   S.md._prodStartConfirm=false;
-  await logAction('update_status',`${p.client||''} — תחילת ייצור בפועל → ייצור`);
+  await logAction('update_status',`${p.client||''} — תחילת ייצור בפועל → ${changes.status}`);
   render();
 }
 async function doMarkInstallDone(id){
   const p=S.projects.find(x=>pid(x)===id);if(!p)return;
-  upProj(id,{actualInstallDate:new Date().toISOString(),status:'הושלם'});
+  const today=new Date().toISOString();
+  const changes={actualInstallDate:today};
+  // Backfill prerequisites if missing so the state machine reaches "הושלם"
+  if(!p.actualPlanStart)changes.actualPlanStart=today;
+  if(!p.actualPlanEnd)changes.actualPlanEnd=today;
+  if(!p.actualProdStart)changes.actualProdStart=today;
+  if(!p.actualProdEnd)changes.actualProdEnd=today;
+  changes.status=computeAutoStatus({...p,...changes});
+  upProj(id,changes);
   S.md._installConfirm=false;
   await logAction('update_status',`${p.client||''} — התקנה בוצעה → הושלם`);
   render();
@@ -2554,14 +2571,14 @@ async function doMarkPlanDone(id){
   const today=new Date().toISOString();
   const p=S.projects.find(x=>pid(x)===id);
   if(!p)return;
-  const newStatus='ממתין לייצור'; // plan done → waiting for production
-  const changes={actualPlanEnd:today,status:newStatus};
+  const changes={actualPlanEnd:today};
   if(!p.actualPlanStart)changes.actualPlanStart=today;
+  changes.status=computeAutoStatus({...p,...changes});
   upProj(id,changes);
   S.md._planConfirm=false;
-  await logAction('update_status',`${p.client||''} — סיום תכנון → ${newStatus}`);
+  await logAction('update_status',`${p.client||''} — סיום תכנון → ${changes.status}`);
   await notifyUsers('statusChange','✅ תכנון הושלם',
-    `תכנון פרויקט ${p.client||''} הסתיים בתאריך ${fmtD(new Date())}.\nשלב הבא: ${newStatus}`,
+    `תכנון פרויקט ${p.client||''} הסתיים בתאריך ${fmtD(new Date())}.\nשלב הבא: ${changes.status}`,
     p.client||'');
   render();
 }
@@ -2569,12 +2586,14 @@ async function doMarkProdDone(id){
   const today=new Date().toISOString();
   const p=S.projects.find(x=>pid(x)===id);
   if(!p)return;
-  const newStatus='ממתין להתקנה'; // prod done → waiting for installation
-  const changes={actualProdEnd:today,status:newStatus};
+  const changes={actualProdEnd:today};
+  if(!p.actualPlanStart)changes.actualPlanStart=today;
+  if(!p.actualPlanEnd)changes.actualPlanEnd=today;
   if(!p.actualProdStart)changes.actualProdStart=today;
+  changes.status=computeAutoStatus({...p,...changes});
   upProj(id,changes);
   S.md._prodConfirm=false;
-  await logAction('update_status',`${p.client||''} — סיום ייצור → ${newStatus}`);
+  await logAction('update_status',`${p.client||''} — סיום ייצור → ${changes.status}`);
   await notifyUsers('statusChange','✅ ייצור הושלם',
     `ייצור פרויקט ${p.client||''} הסתיים בתאריך ${fmtD(new Date())}.\nשלב הבא: התקנה`,
     p.client||'');
