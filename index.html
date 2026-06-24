@@ -469,6 +469,8 @@ const SHEB={done:'הושלם',active:'פעיל',overdue:'חריגה',future:'ע�
 const SBDG={done:'bg',active:'bb',overdue:'br',future:'by'};
 const SMAP={'ממתין לתכנון':'by','תכנון':'bb','ממתין לייצור':'bt','ייצור':'bam','רכש':'bpu','ממתין להתקנה':'bt','התקנה':'bg','הושלם':'by','בוטל':'br'};
 const NKEYS={planStart:'יום לפני תחילת תכנון',planEnd:'יום לפני סיום תכנון',prodStart:'יום לפני תחילת ייצור',overdue:'חריגה',procMissing:'רכש ללא תאריך',statusChange:'שינוי סטטוס'};
+// Notification frequency in days. 0 = send once only, N = re-send every N days ("nudge").
+const NFREQ_DEFAULTS={planStart:0,planEnd:0,prodStart:0,overdue:3,procMissing:7,statusChange:0};
 const DEF_ROLES=[
   {id:'admin',name:'מנהל מערכת',color:'#7c3aed'},{id:'pm',name:'מנהל פרויקט',color:'#0f6e56'},
   {id:'eng',name:'מהנדס תכנון',color:'#1d4ed8'},{id:'prod',name:'ראש ייצור',color:'#b45309'},
@@ -493,6 +495,7 @@ const S={
   loading:true,saving:false,
   loginEmail:'',loginPass:'',loginErr:'',
   pin:['','','',''],pinErr:false,adminOK:false,
+  settings:{},notifFreq:{...NFREQ_DEFAULTS},
 };
 
 // ── DATE HELPERS ──────────────────────────────────────────────
@@ -597,55 +600,84 @@ async function sendMail(toName,toEmail,notifType,message,projectName){
 }
 
 // Send notification to all users who have a given notif key enabled
-async function notifyUsers(notifKey, notifType, message, projectName){
+// Send a notification to all eligible users, respecting per-notification frequency.
+// Frequency (days): 0 = send once only; N = re-send only if N+ days passed since last send.
+// Tracking is stored per project in p.notifLog keyed by `${notifKey}_${userId}`.
+// projObj is optional — when provided, dedup/throttling is applied and the log is persisted.
+async function notifyUsers(notifKey, notifType, message, projectName, projObj){
   const targets=S.users.filter(u=>u.active!==false&&u.email&&(u.notif||{})[notifKey]);
+  if(!targets.length)return;
+  const freq=(S.notifFreq||NFREQ_DEFAULTS)[notifKey]??0;
+  const now=new Date();
+  // Event-based notifications (no project tracking) — always send once per call
+  if(!projObj){
+    for(const u of targets){await sendMail(u.name,u.email,notifType,message,projectName);}
+    return;
+  }
+  const log={...(projObj.notifLog||{})};
+  let changed=false;
   for(const u of targets){
-    await sendMail(u.name, u.email, notifType, message, projectName);
+    const logKey=notifKey+'_'+u.id;
+    const last=log[logKey]?new Date(log[logKey]):null;
+    let shouldSend=false;
+    if(!last){shouldSend=true;}                        // never sent → send
+    else if(freq>0){                                   // nudge mode → check elapsed days
+      const daysPassed=Math.floor((now-last)/86400000);
+      if(daysPassed>=freq)shouldSend=true;
+    }                                                  // freq 0 + already sent → skip
+    if(shouldSend){
+      await sendMail(u.name,u.email,notifType,message,projectName);
+      log[logKey]=now.toISOString();
+      changed=true;
+    }
+  }
+  if(changed){
+    // Persist the updated notifLog on the project
+    upProj(pid(projObj),{notifLog:log});
   }
 }
 
 // ── Check daily alerts (overdue + upcoming) ──
 async function checkDailyAlerts(){
-  // Don't run if Brevo key not loaded yet (avoids 31 failed sends on startup)
+  // Don't run if Brevo key not loaded yet (avoids failed sends on startup)
   if(!BREVO_API_KEY&&!S.settings?.brevoKey)return;
-  // Only run once per calendar day per browser
-  const todayKey='alertsRun_'+TODAY.toDateString();
-  try{if(sessionStorage.getItem(todayKey))return;sessionStorage.setItem(todayKey,'1');}catch(e){}
+  // Per-recipient frequency tracking (in notifyUsers) prevents duplicate sends,
+  // so this can safely run on every login.
   const tomorrow=new Date(TODAY);tomorrow.setDate(tomorrow.getDate()+1);
   const tmStr=tomorrow.toDateString();
   for(const p of S.projects){
-    if(p.status==='הושלם'||p.rejected)continue;
+    if(p.status==='הושלם'||p.rejected||p.cancelled)continue;
     const client=p.client||'';
     // overdue planning
     if(!p.actualPlanEnd&&p.planEnd&&(()=>{const e=toD(p.planEnd);const eod=new Date(e);eod.setHours(23,59,59,999);return eod<TODAY;})()){
       await notifyUsers('overdue','⚠ חריגה בתכנון',
-        `פרויקט ${client} חרג מתאריך סיום התכנון המתוכנן (${fmtD(p.planEnd)})`,client);
+        `פרויקט ${client} חרג מתאריך סיום התכנון המתוכנן (${fmtD(p.planEnd)})`,client,p);
     }
     // overdue production
     if(!p.actualProdEnd&&p.prodEnd&&p.status!=='תכנון'&&(()=>{const e=toD(p.prodEnd);const eod=new Date(e);eod.setHours(23,59,59,999);return eod<TODAY;})()){
       await notifyUsers('overdue','⚠ חריגה בייצור',
-        `פרויקט ${client} חרג מתאריך סיום הייצור המתוכנן (${fmtD(p.prodEnd)})`,client);
+        `פרויקט ${client} חרג מתאריך סיום הייצור המתוכנן (${fmtD(p.prodEnd)})`,client,p);
     }
     // day before plan end
     if(!p.actualPlanEnd&&p.planEnd&&toD(p.planEnd)?.toDateString()===tmStr){
       await notifyUsers('planEnd','📅 מחר סיום תכנון',
-        `מחר (${fmtD(p.planEnd)}) הוא יום סיום התכנון המתוכנן של פרויקט ${client}`,client);
+        `מחר (${fmtD(p.planEnd)}) הוא יום סיום התכנון המתוכנן של פרויקט ${client}`,client,p);
     }
     // day before plan start
     if(!p.actualPlanStart&&p.planStart&&toD(p.planStart)?.toDateString()===tmStr){
       await notifyUsers('planStart','📅 מחר תחילת תכנון',
-        `מחר (${fmtD(p.planStart)}) אמורה להתחיל עבודת התכנון על פרויקט ${client}`,client);
+        `מחר (${fmtD(p.planStart)}) אמורה להתחיל עבודת התכנון על פרויקט ${client}`,client,p);
     }
     // day before prod start
     if(!p.actualProdStart&&p.prodStart&&toD(p.prodStart)?.toDateString()===tmStr){
       await notifyUsers('prodStart','📅 מחר תחילת ייצור',
-        `מחר (${fmtD(p.prodStart)}) אמורה להתחיל עבודת הייצור של פרויקט ${client}`,client);
+        `מחר (${fmtD(p.prodStart)}) אמורה להתחיל עבודת הייצור של פרויקט ${client}`,client,p);
     }
     // procurement missing date
     const missingProc=(p.procurement||[]).filter(i=>!i.cancelled&&!i.arrived&&!i.expected);
     if(missingProc.length){
       await notifyUsers('procMissing','📦 רכש ללא תאריך',
-        `פרויקט ${client} — ${missingProc.length} אביזרים ללא תאריך אספקה: ${missingProc.map(i=>i.name).join(', ')}`,client);
+        `פרויקט ${client} — ${missingProc.length} אביזרים ללא תאריך אספקה: ${missingProc.map(i=>i.name).join(', ')}`,client,p);
     }
   }
 }
@@ -751,6 +783,9 @@ async function fbLoadAll(){
       if(d.pmaster)try{const pm=JSON.parse(d.pmaster);if(Array.isArray(pm))S.pmaster=pm;}catch(e){}
       // Load Brevo key securely from Firebase
       if(d.brevoKey){S.settings=S.settings||{};S.settings.brevoKey=d.brevoKey;BREVO_API_KEY=d.brevoKey;}
+      // Load notification frequencies
+      if(d.notifFreq){try{const nf=JSON.parse(d.notifFreq);S.notifFreq={...NFREQ_DEFAULTS,...nf};}catch(e){S.notifFreq={...NFREQ_DEFAULTS};}}
+      else{S.notifFreq={...NFREQ_DEFAULTS};}
     }
   }catch(e){console.error('fbLoadAll',e);}
   // Sync status for existing projects based on actual dates
@@ -1465,6 +1500,27 @@ function renderAdmin(){
           </div>
         </div>
         <div style="margin-top:8px">${brevoStatus}</div>
+      </div>
+      <div class="sec">תדירות שליחת התראות (נדנוד)</div>
+      <div style="background:var(--bg3);border:1px solid var(--b);border-radius:var(--r8);padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--t2);margin-bottom:12px">
+          לכל סוג התראה — כל כמה ימים לשלוח שוב לאותו נמען. <strong>0 = פעם אחת בלבד</strong>, 3 = כל 3 ימים, וכו'.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${Object.keys(NKEYS).map(k=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r6)">
+              <span style="font-size:12px;font-weight:500">${NKEYS[k]}</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" min="0" max="60" class="fi" id="nfreq_${k}"
+                  value="${(S.notifFreq||NFREQ_DEFAULTS)[k]??0}"
+                  style="width:70px;text-align:center;font-family:'IBM Plex Mono',monospace">
+                <span style="font-size:11px;color:var(--t3)">ימים</span>
+              </div>
+            </div>`).join('')}
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:flex-end">
+          <button class="btn pri sm" onclick="saveNotifFreq()">&#128190; שמור תדירויות</button>
+        </div>
       </div>
     </div>`;
   }else{
@@ -3169,6 +3225,26 @@ async function saveBrevoKey(){
   }
 }
 
+async function saveNotifFreq(){
+  const freq={};
+  for(const k of Object.keys(NKEYS)){
+    const el=document.getElementById('nfreq_'+k);
+    let v=parseInt(el?.value);
+    if(isNaN(v)||v<0)v=0;
+    if(v>60)v=60;
+    freq[k]=v;
+  }
+  try{
+    await setDoc(doc(db,'settings','main'),{notifFreq:JSON.stringify(freq)},{merge:true});
+    S.notifFreq={...NFREQ_DEFAULTS,...freq};
+    await logAction('add_note','תדירות התראות עודכנה');
+    alert('✓ תדירויות ההתראות נשמרו');
+    render();
+  }catch(e){
+    alert('שגיאה בשמירה: '+e.message);
+  }
+}
+
 async function testBrevoKey(){
   const key=document.getElementById('brevo_key_inp')?.value?.trim();
   if(!key){alert('נא להכניס API Key קודם');return;}
@@ -3249,7 +3325,7 @@ function getPauseSegments(start, end, pauses){
 }
 
 // ── EXPOSE TO WINDOW ──────────────────────────────────────────
-const W={V,doLogin,doLogout,doPausePlanning,doResumePlanning,doPauseProduction,doResumeProduction,getPauseSegments,buildProcSummary,saveBrevoKey,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openEditProj,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
+const W={V,doLogin,doLogout,doPausePlanning,doResumePlanning,doPauseProduction,doResumeProduction,getPauseSegments,buildProcSummary,saveBrevoKey,saveNotifFreq,testBrevoKey,doMarkFollowup,doSendFollowupReminder,doArchiveNote,doAddArchiveTask,doToggleArchiveTask,doUpArchiveTask,doDelArchiveTask,toggleNoteRecipient,toggleAllNoteRecipients,setDashFilter,setProjFilter,clearDashFilter,clearProjFilter,openCancelProj,doCancelStep1,doCancelProjectFinal,computeAutoStatus,waitingDays,notifyUsers,checkDailyAlerts,sendMail,doMarkPlanDone,doMarkProdDone,doPlanStartToday,doProdStartToday,doMarkInstallDone,doMarkArrFromSchedule,ttShow,ttHide,ttPos,buildPlanTT,buildProdTT,buildMilestoneTT,buildProcTT,recalcInstallDays,doApprovalSaveEdit,doApprovalSaveAndApprove,openPD,openPM,openNP,openEditProj,openAL,openRM,openAU,openEU,closeM,switchAdminTab,hPin,hPinK,doSubPin,doTogNotif,doDelUser,doAddPM,doRmPM,doSaveNU,doSaveEU,hEngChange,hPSChange,hFU,hDrop,doAddFPI,doNextStep,doSaveProj,doApprove,doRejP,doUpDate,doUpStatus,doAddPI,doUpPC,doUpPD,doMarkArr,doCncPC,doAddNote,upProj,loadAuditLogs,render,
   setDashFilter,setProjFilter,clearDashFilter,clearProjFilter};
 Object.entries(W).forEach(([k,v])=>window[k]=v);
 // Expose S and render for inline handlers
